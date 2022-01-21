@@ -1,6 +1,6 @@
 name: kabelwerk
 version: 0.0.0
-description: The base Kabelwerk SDK for Dart.
+description: The Kabelwerk SDK for Dart.
 
 homepage: https://kabelwerk.io
 repository: https://github.com/kabelwerk/sdk-dart
