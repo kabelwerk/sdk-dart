@@ -4,6 +4,7 @@
 library kabelwerk;
 
 export 'src/dispatcher.dart';
+export 'src/events.dart';
 export 'src/kabelwerk.dart';
 export 'src/payloads.dart';
 
