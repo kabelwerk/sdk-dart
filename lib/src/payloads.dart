@@ -36,7 +36,6 @@ class InboxItemRoom {
         hubId = payload['hub_id'];
 }
 
-/// An immutable object representing a list of inbox items.
 class InboxItemsList {
   final List<InboxItem> items;
 
@@ -67,4 +66,37 @@ class Message {
         updatedAt = DateTime.parse(payload['updated_at']),
         user =
             payload['user'] == null ? null : User.fromPayload(payload['user']);
+}
+
+class MessagesList {
+  final List<Message> messages;
+
+  MessagesList.fromPayload(Map payload)
+      : messages = List<Message>.unmodifiable(
+            payload['messages'].map((message) => Message.fromPayload(message)));
+}
+
+class RoomWithAttributes {
+  final int id;
+  final Map attributes;
+  final User user;
+
+  RoomWithAttributes.fromPayload(Map payload)
+      : id = payload['id'],
+        attributes = payload['attributes'],
+        user = User.fromPayload(payload['user']);
+}
+
+class RoomJoin {
+  final int id;
+  final Map attributes;
+  final User user;
+  final List<Message> messages;
+
+  RoomJoin.fromPayload(Map payload)
+      : id = payload['id'],
+        attributes = payload['attributes'],
+        user = User.fromPayload(payload['user']),
+        messages = List<Message>.unmodifiable(
+            payload['messages'].map((message) => Message.fromPayload(message)));
 }

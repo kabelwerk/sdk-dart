@@ -5,4 +5,5 @@ library kabelwerk;
 export 'src/events.dart';
 export 'src/inbox.dart';
 export 'src/kabelwerk.dart';
-export 'src/payloads.dart';
+export 'src/payloads.dart' show User, InboxItem, InboxItemRoom, Message;
+export 'src/room.dart';

@@ -48,9 +48,9 @@ class UserUpdated extends Event {
 // Inbox events
 
 /// An [Inbox] event fired when the connection to the server is first
-/// established.
+/// established and the Inbox instance is ready to be used.
 ///
-/// This event is fired at most once per inbox instance.
+/// This event is fired at most once per Inbox instance.
 class InboxReady extends Event {
   /// The list of initially loaded inbox items.
   final List<InboxItem> items;
@@ -73,6 +73,21 @@ class InboxUpdated extends Event {
 
 // Room events
 
-class RoomReady extends Event {}
+/// A [Room] event fired when the connection to the server is first established
+/// and the Room instance is ready to be used.
+///
+/// This event is fired at most once per Room instance.
+class RoomReady extends Event {
+  /// The list of the chat room's most recent messages.
+  final List<Message> messages;
 
-class MessagePosted extends Event {}
+  RoomReady(this.messages);
+}
+
+/// A [Room] event fired when there is a new message posted in the chat room.
+class MessagePosted extends Event {
+  /// The newly posted message.
+  final Message message;
+
+  MessagePosted(this.message);
+}

@@ -7,19 +7,17 @@ import './payloads.dart';
 /// An inbox is a view on the rooms the user has access to; it maintains a list
 /// of rooms ordered by recency of their latest message.
 class Inbox {
-  // dispatcher
+  final User _user;
+
   final Dispatcher _dispatcher = Dispatcher([
     'error',
     'ready',
     'updated',
   ]);
 
-  // internal state
-  final User _user;
   final Map _items = Map();
   bool _ready = false;
 
-  // phoenix
   final PhoenixSocket _socket;
   PhoenixChannel? _channel;
 
@@ -28,7 +26,7 @@ class Inbox {
   void _setupChannel() {
     _channel = _socket.channel('user_inbox:${_user.id}');
 
-    _channel?.on('inbox_updated', (Map? payload, _ref, _joinRef) {
+    _channel?.on('inbox_updated', (Map? payload, ref, joinRef) {
       if (payload == null) {
         throw Error();
       }

@@ -4,16 +4,15 @@ import './dispatcher.dart';
 import './events.dart';
 import './inbox.dart';
 import './payloads.dart';
+import './room.dart';
 
 /// A Kabelwerk instance opens and maintains a websocket connection to the
 /// Kabelwerk backend; it is also used for retrieving and updating the
 /// connected user's info, opening inboxes, and creating and opening rooms.
 class Kabelwerk {
-  // config
   String _url = '';
   String _token = '';
 
-  // dispatcher
   Dispatcher _dispatcher = Dispatcher([
     'error',
     'ready',
@@ -23,11 +22,9 @@ class Kabelwerk {
     'user_updated',
   ]);
 
-  // internal state
-  bool _ready = false;
   User? _user;
+  bool _ready = false;
 
-  // phoenix
   PhoenixSocket? _socket;
   PhoenixChannel? _privateChannel;
 
@@ -165,5 +162,16 @@ class Kabelwerk {
     }
 
     return Inbox(socket, user);
+  }
+
+  Room openRoom(int roomId) {
+    var socket = _socket;
+    var user = _user;
+
+    if (socket == null || user == null) {
+      throw Error();
+    }
+
+    return Room(socket, user, roomId);
   }
 }

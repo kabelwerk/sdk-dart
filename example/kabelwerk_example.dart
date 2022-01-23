@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/args.dart';
+
 import 'package:kabelwerk/kabelwerk.dart';
 
 void main(List<String> arguments) {
@@ -14,6 +15,7 @@ void main(List<String> arguments) {
 
   final kabelwerk = Kabelwerk();
   Inbox? inbox;
+  Room? room;
 
   kabelwerk.config(url: parsed['url'], token: parsed['token']);
 
@@ -26,14 +28,21 @@ void main(List<String> arguments) {
 
     inbox = kabelwerk.openInbox()
       ..on('ready', (event) {
+        room = kabelwerk.openRoom(event.items.first.room.id)
+          ..on('ready', (event) {
+            print(event.messages);
+
+            room?.postMessage(text: 'hi from dart!');
+          })
+          ..on('message_posted', (event) {
+            print(event.message);
+          })
+          ..connect();
+      })
+      ..on('updated', (event) {
         print(event.items);
-      });
-
-    inbox?.on('updated', (event) {
-      print(event.items);
-    });
-
-    inbox?.connect();
+      })
+      ..connect();
   });
 
   kabelwerk.connect();
