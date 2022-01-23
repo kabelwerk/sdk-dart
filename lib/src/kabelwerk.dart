@@ -35,7 +35,7 @@ class Kabelwerk {
     _socket = PhoenixSocket(_url,
         socketOptions: PhoenixSocketOptions(params: {
           'token': _token,
-          'agent': 'sdk-dart/0.0.0',
+          'agent': 'sdk-dart/0.1.0',
         }))
       ..onOpen(() {
         if (_ready) {
