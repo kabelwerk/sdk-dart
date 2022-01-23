@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:phoenix_wings/phoenix_wings.dart';
 
 import './dispatcher.dart';
@@ -5,6 +7,7 @@ import './events.dart';
 import './inbox.dart';
 import './payloads.dart';
 import './room.dart';
+import './utils.dart';
 
 /// A Kabelwerk instance opens and maintains a websocket connection to the
 /// Kabelwerk backend; it is also used for retrieving and updating the
@@ -13,7 +16,7 @@ class Kabelwerk {
   String _url = '';
   String _token = '';
 
-  Dispatcher _dispatcher = Dispatcher([
+  final Dispatcher _dispatcher = Dispatcher([
     'error',
     'ready',
     'connected',
@@ -58,9 +61,7 @@ class Kabelwerk {
       var push = _privateChannel?.join();
 
       push?.receive('ok', (Map? payload) {
-        if (payload == null) throw Error();
-
-        var user = User.fromPayload(payload);
+        var user = User.fromPayload(throwIfNull(payload));
 
         if (_user != null) {
           _dispatcher.send('user_updated', UserUpdated(user));
@@ -82,6 +83,12 @@ class Kabelwerk {
         _dispatcher.send('error', ErrorEvent());
       });
     });
+  }
+
+  void _ensureReady() {
+    if (!_ready) {
+      throw StateError('This Kabelwerk instance is not ready yet.');
+    }
   }
 
   /// Sets the configuration.
@@ -108,13 +115,38 @@ class Kabelwerk {
   /// is invoked.
   void connect() {
     if (_socket != null) {
-      throw Error();
+      throw StateError(
+          "This Kabelwerk instance's .connect() method was already called once.");
     }
 
     _setupSocket();
     _setupPrivateChannel();
 
     _socket?.connect();
+  }
+
+  /// Creates a chat room between the connected user and a hub.
+  ///
+  /// Returns a Future resolving into the ID of the newly created room.
+  Future<dynamic> createRoom(int hubId) {
+    _ensureReady();
+
+    final privateChannel = throwIfNull(_privateChannel);
+    final completer = Completer();
+
+    privateChannel.push(event: 'create_room', payload: {'hub': hubId})
+      ..receive('ok', (Map? payload) {
+        final int roomId = throwIfNull(payload)['id'];
+        completer.complete(roomId);
+      })
+      ..receive('error', (error) {
+        completer.completeError(ErrorEvent());
+      })
+      ..receive('timeout', (error) {
+        completer.completeError(ErrorEvent());
+      });
+
+    return completer.future;
   }
 
   /// Removes all previously attached event listeners and closes the connection
@@ -130,6 +162,12 @@ class Kabelwerk {
 
     _user = null;
     _ready = false;
+  }
+
+  /// Returns the connected user's info.
+  User getUser() {
+    _ensureReady();
+    return throwIfNull(_user);
   }
 
   /// Returns a boolean indicating whether the instance is currently connected
@@ -154,24 +192,45 @@ class Kabelwerk {
 
   /// Initialises and returns an [Inbox] instance.
   Inbox openInbox() {
-    var socket = _socket;
-    var user = _user;
+    _ensureReady();
 
-    if (socket == null || user == null) {
-      throw Error();
-    }
+    final socket = throwIfNull(_socket);
+    final user = throwIfNull(_user);
 
     return Inbox(socket, user);
   }
 
+  /// Initialises and returns a [Room] instance for the chat room with the
+  /// given ID.
   Room openRoom(int roomId) {
-    var socket = _socket;
-    var user = _user;
+    _ensureReady();
 
-    if (socket == null || user == null) {
-      throw Error();
-    }
+    final socket = throwIfNull(_socket);
+    final user = throwIfNull(_user);
 
     return Room(socket, user, roomId);
+  }
+
+  /// Updates the connected user's info.
+  Future<dynamic> updateUser({required String name}) {
+    _ensureReady();
+
+    final privateChannel = throwIfNull(_privateChannel);
+    final completer = Completer();
+
+    privateChannel.push(event: 'update_user', payload: {'name': name})
+      ..receive('ok', (Map? payload) {
+        final user = User.fromPayload(throwIfNull(payload));
+        _user = user;
+        completer.complete(user);
+      })
+      ..receive('error', (error) {
+        completer.completeError(ErrorEvent());
+      })
+      ..receive('timeout', (error) {
+        completer.completeError(ErrorEvent());
+      });
+
+    return completer.future;
   }
 }

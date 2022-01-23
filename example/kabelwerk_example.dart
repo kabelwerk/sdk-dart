@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -14,33 +13,31 @@ void main(List<String> arguments) {
   final parsed = parser.parse(arguments);
 
   final kabelwerk = Kabelwerk();
-  Inbox? inbox;
   Room? room;
 
   kabelwerk.config(url: parsed['url'], token: parsed['token']);
 
-  kabelwerk.on('connected', (_) => stdout.writeln('connected'));
-  kabelwerk.on('disconnected', (_) => stdout.writeln('disconnected'));
-  kabelwerk.on('reconnected', (_) => stdout.writeln('reconnected'));
+  kabelwerk.on('connected', (_) => printStatus('Kabelwerk — connected'));
+  kabelwerk.on('disconnected', (_) => printStatus('Kabelwerk — disconnected'));
+  kabelwerk.on('reconnected', (_) => printStatus('Kabelwerk — reconnected'));
 
   kabelwerk.on('ready', (_) {
-    stdout.writeln('ready');
+    printStatus('Kabelwerk — ­ready');
 
-    inbox = kabelwerk.openInbox()
+    kabelwerk.openInbox()
       ..on('ready', (event) {
-        room = kabelwerk.openRoom(event.items.first.room.id)
-          ..on('ready', (event) {
-            print(event.messages);
+        printStatus('Inbox — ready');
 
-            room?.postMessage(text: 'hi from dart!');
-          })
-          ..on('message_posted', (event) {
-            print(event.message);
-          })
-          ..connect();
+        if (event.items.isEmpty) {
+          kabelwerk.createRoom(1).then((roomId) {
+            room = setupRoom(kabelwerk, roomId);
+          });
+        } else {
+          room = setupRoom(kabelwerk, event.items.first.room.id);
+        }
       })
       ..on('updated', (event) {
-        print(event.items);
+        printStatus('Inbox — updated');
       })
       ..connect();
   });
@@ -48,11 +45,38 @@ void main(List<String> arguments) {
   kabelwerk.connect();
 
   void handleLine(line) {
-    print(line);
+    if (line.startsWith('/name ')) {
+    } else {
+      room?.postMessage(text: line);
+    }
   }
 
   stdin
       .transform(utf8.decoder)
       .transform(const LineSplitter())
       .listen(handleLine);
+}
+
+Room setupRoom(Kabelwerk kabelwerk, int roomId) {
+  return kabelwerk.openRoom(roomId)
+    ..on('ready', (event) {
+      printStatus('Room — ready');
+
+      for (final message in event.messages) {
+        printMessage(message);
+      }
+    })
+    ..on('message_posted', (event) {
+      printMessage(event.message);
+    })
+    ..connect();
+}
+
+void printStatus(String status) {
+  stdout.writeln('* ${status}');
+}
+
+void printMessage(Message message) {
+  stdout.writeln(
+      '[${message.insertedAt}] <${message.user?.name}> ${message.text}');
 }

@@ -7,8 +7,8 @@ class Callback {
 }
 
 class Dispatcher {
-  List<String> _eventNames = [];
-  List<Callback> _callbacks = [];
+  final List<String> _eventNames;
+  final List<Callback> _callbacks = [];
   int _lastReference = -1;
 
   Dispatcher(this._eventNames);
@@ -26,7 +26,7 @@ class Dispatcher {
   void send(String event, dynamic params) {
     _checkEventName(event);
 
-    _callbacks.forEach((callback) {
+    _callbacks.forEach((Callback callback) {
       if (callback.event == event) {
         callback.function(params);
       }

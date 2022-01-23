@@ -5,6 +5,7 @@ import 'package:phoenix_wings/phoenix_wings.dart';
 import './dispatcher.dart';
 import './events.dart';
 import './payloads.dart';
+import './utils.dart';
 
 /// A room is where chat messages are exchanged between an end user on one side
 /// and your care team (hub users) on the other side.
@@ -47,11 +48,7 @@ class Room {
     _channel = _socket.channel('room:${_roomId}');
 
     _channel?.on('message_posted', (Map? payload, ref, joinRef) {
-      if (payload == null) {
-        throw Error();
-      }
-
-      final message = Message.fromPayload(payload);
+      final message = Message.fromPayload(throwIfNull(payload));
 
       if (message.id > _lastMessageId) {
         _lastMessageId = message.id;
@@ -60,14 +57,10 @@ class Room {
       _dispatcher.send('message_posted', MessagePosted(message));
     });
 
-    var push = _channel?.join();
+    final push = _channel?.join();
 
     push?.receive('ok', (Map? payload) {
-      if (payload == null) {
-        throw Error();
-      }
-
-      final roomJoin = RoomJoin.fromPayload(payload);
+      final roomJoin = RoomJoin.fromPayload(throwIfNull(payload));
       _roomUser = roomJoin.user;
       _roomAttributes = roomJoin.attributes;
       _updateFirstLastIds(roomJoin.messages);
@@ -78,7 +71,6 @@ class Room {
         }
       } else {
         _ready = true;
-
         _dispatcher.send('ready', RoomReady(roomJoin.messages));
       }
     });
@@ -92,13 +84,20 @@ class Room {
     });
   }
 
+  void _ensureReady() {
+    if (!_ready) {
+      throw StateError('This Room instance is not ready yet.');
+    }
+  }
+
   /// Establishes connection to the server.
   ///
   /// Usually all event listeners should be already attached when this method
   /// is invoked.
   void connect() {
     if (_channel != null) {
-      throw Error();
+      throw StateError(
+          "This Room instance's .connect() method was already called once.");
     }
 
     _setupChannel();
@@ -117,6 +116,12 @@ class Room {
     _ready = false;
   }
 
+  /// Returns the room user's info.
+  User getUser() {
+    _ensureReady();
+    return throwIfNull(_roomUser);
+  }
+
   /// Removes one or more previously attached event listeners.
   ///
   /// Both parameters are optional: if no [reference] is given, all listeners
@@ -133,30 +138,27 @@ class Room {
 
   /// Posts a new message in the chat room.
   Future<dynamic> postMessage({required String text}) {
+    _ensureReady();
+
+    final channel = throwIfNull(_channel);
     final completer = Completer();
-    final push = _channel?.push(event: 'post_message', payload: {'text': text});
 
-    push?.receive('ok', (Map? payload) {
-      if (payload == null) {
-        throw Error();
-      }
+    channel.push(event: 'post_message', payload: {'text': text})
+      ..receive('ok', (Map? payload) {
+        final message = Message.fromPayload(throwIfNull(payload));
 
-      final message = Message.fromPayload(payload);
+        if (message.id > _lastMessageId) {
+          _lastMessageId = message.id;
+        }
 
-      if (message.id > _lastMessageId) {
-        _lastMessageId = message.id;
-      }
-
-      completer.complete(message);
-    });
-
-    push?.receive('error', (error) {
-      completer.completeError(ErrorEvent());
-    });
-
-    push?.receive('timeout', (error) {
-      completer.completeError(ErrorEvent());
-    });
+        completer.complete(message);
+      })
+      ..receive('error', (error) {
+        completer.completeError(ErrorEvent());
+      })
+      ..receive('timeout', (error) {
+        completer.completeError(ErrorEvent());
+      });
 
     return completer.future;
   }

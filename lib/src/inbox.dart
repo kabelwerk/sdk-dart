@@ -3,6 +3,7 @@ import 'package:phoenix_wings/phoenix_wings.dart';
 import './dispatcher.dart';
 import './events.dart';
 import './payloads.dart';
+import './utils.dart';
 
 /// An inbox is a view on the rooms the user has access to; it maintains a list
 /// of rooms ordered by recency of their latest message.
@@ -27,11 +28,7 @@ class Inbox {
     _channel = _socket.channel('user_inbox:${_user.id}');
 
     _channel?.on('inbox_updated', (Map? payload, ref, joinRef) {
-      if (payload == null) {
-        throw Error();
-      }
-
-      final inboxItem = InboxItem.fromPayload(payload, _user);
+      final inboxItem = InboxItem.fromPayload(throwIfNull(payload), _user);
 
       _items[inboxItem.room.id] = inboxItem;
 
@@ -54,31 +51,29 @@ class Inbox {
   }
 
   void _loadItemsOnJoin() {
-    var push = _channel?.push(event: 'list_rooms', payload: Map());
+    final channel = throwIfNull(_channel);
 
-    push?.receive('ok', (Map? payload) {
-      if (payload == null) throw Error();
+    channel.push(event: 'list_rooms', payload: Map())
+      ..receive('ok', (Map? payload) {
+        final parsed = InboxItemsList.fromPayload(throwIfNull(payload), _user);
 
-      for (var inboxItem in InboxItemsList.fromPayload(payload, _user).items) {
-        _items[inboxItem.room.id] = inboxItem;
-      }
+        for (var inboxItem in parsed.items) {
+          _items[inboxItem.room.id] = inboxItem;
+        }
 
-      if (!_ready) {
-        _ready = true;
-
-        _dispatcher.send('ready', InboxReady(listItems()));
-      } else {
-        _dispatcher.send('updated', InboxUpdated(listItems()));
-      }
-    });
-
-    push?.receive('error', (error) {
-      _dispatcher.send('error', ErrorEvent());
-    });
-
-    push?.receive('timeout', (error) {
-      _dispatcher.send('error', ErrorEvent());
-    });
+        if (!_ready) {
+          _ready = true;
+          _dispatcher.send('ready', InboxReady(listItems()));
+        } else {
+          _dispatcher.send('updated', InboxUpdated(listItems()));
+        }
+      })
+      ..receive('error', (error) {
+        _dispatcher.send('error', ErrorEvent());
+      })
+      ..receive('timeout', (error) {
+        _dispatcher.send('error', ErrorEvent());
+      });
   }
 
   /// Establishes connection to the server.
@@ -86,7 +81,10 @@ class Inbox {
   /// Usually all event listeners should be already attached when this method
   /// is invoked.
   void connect() {
-    if (_channel != null) throw Error();
+    if (_channel != null) {
+      throw StateError(
+          "This Inbox instance's .connect() method was already called once.");
+    }
 
     _setupChannel();
   }
