@@ -1,12 +1,8 @@
-/// Support for doing something awesome.
-///
-/// More dartdocs go here.
+/// Welcome to the documentation of the [Kabelwerk](https://kabelwerk.io) SDK
+/// for Dart!
 library kabelwerk;
 
-export 'src/dispatcher.dart';
 export 'src/events.dart';
 export 'src/inbox.dart';
 export 'src/kabelwerk.dart';
 export 'src/payloads.dart';
-
-// TODO: Export any libraries intended for clients of this package.

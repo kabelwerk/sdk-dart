@@ -1,5 +1,6 @@
-import 'package:kabelwerk/kabelwerk.dart';
 import 'package:test/test.dart';
+
+import 'package:kabelwerk/src/dispatcher.dart';
 
 void main() {
   test('unknown event → error', () {

@@ -1,3 +1,4 @@
+/// An immutable object representing a Kabelwerk user.
 class User {
   final int id;
   final String key;
@@ -11,6 +12,7 @@ class User {
         name = payload['name'];
 }
 
+/// An immutable object representing an item from an [Inbox].
 class InboxItem {
   final InboxItemRoom room;
   final Message? message;
@@ -24,6 +26,7 @@ class InboxItem {
         isNew = !payload['marked_by'].contains(user.id);
 }
 
+/// An immutable object representing the chat room of an [InboxItem].
 class InboxItemRoom {
   final int id;
   final int hubId;
@@ -33,14 +36,16 @@ class InboxItemRoom {
         hubId = payload['hub_id'];
 }
 
+/// An immutable object representing a list of inbox items.
 class InboxItemsList {
   final List<InboxItem> items;
 
   InboxItemsList.fromPayload(Map payload, User user)
-      : items = List<InboxItem>.from(
+      : items = List<InboxItem>.unmodifiable(
             payload['items'].map((item) => InboxItem.fromPayload(item, user)));
 }
 
+/// An immutable object representing a chat message.
 class Message {
   final int id;
   final int roomId;

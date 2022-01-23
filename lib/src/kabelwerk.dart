@@ -5,6 +5,9 @@ import './events.dart';
 import './inbox.dart';
 import './payloads.dart';
 
+/// A Kabelwerk instance opens and maintains a websocket connection to the
+/// Kabelwerk backend; it is also used for retrieving and updating the
+/// connected user's info, opening inboxes, and creating and opening rooms.
 class Kabelwerk {
   // config
   String _url = '';
@@ -84,6 +87,14 @@ class Kabelwerk {
     });
   }
 
+  /// Sets the configuration.
+  ///
+  /// - [url] → the URL of the Kabelwerk backend to connect to;
+  /// - [token] → a JWT token identifying the user on behalf of whom the
+  /// connection is established.
+  ///
+  /// The method can be called mutliple times — only the specified values are
+  /// updated.
   void config({String? url, String? token}) {
     if (url != null) {
       _url = url;
@@ -94,6 +105,10 @@ class Kabelwerk {
     }
   }
 
+  /// Establishes connection to the server.
+  ///
+  /// Usually all event listeners should be already attached when this method
+  /// is invoked.
   void connect() {
     if (_socket != null) {
       throw Error();
@@ -105,6 +120,8 @@ class Kabelwerk {
     _socket?.connect();
   }
 
+  /// Removes all previously attached event listeners and closes the connection
+  /// to the server.
   void disconnect() {
     _dispatcher.off();
 
@@ -118,15 +135,27 @@ class Kabelwerk {
     _ready = false;
   }
 
+  /// Returns a boolean indicating whether the instance is currently connected
+  /// to the server.
   bool isConnected() {
     return _socket?.isConnected ?? false;
   }
 
+  /// Removes one or more previously attached event listeners.
+  ///
+  /// Both parameters are optional: if no [reference] is given, all listeners
+  /// for the given event are removed; if no [event] is given, then all event
+  /// listeners attached to the instance are removed.
   void off([String? event, String? reference]) =>
       _dispatcher.off(event, reference);
 
+  /// Attaches an event listener.
+  ///
+  /// Returns a short string identifying the attached listener — which string
+  /// can be then used to remove that event listener with [Kabelwerk.off()].
   String on(String event, Function function) => _dispatcher.on(event, function);
 
+  /// Initialises and returns an [Inbox] instance.
   Inbox openInbox() {
     var socket = _socket;
     var user = _user;

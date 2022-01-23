@@ -4,6 +4,8 @@ import './dispatcher.dart';
 import './events.dart';
 import './payloads.dart';
 
+/// An inbox is a view on the rooms the user has access to; it maintains a list
+/// of rooms ordered by recency of their latest message.
 class Inbox {
   // dispatcher
   final Dispatcher _dispatcher = Dispatcher([
@@ -81,12 +83,18 @@ class Inbox {
     });
   }
 
+  /// Establishes connection to the server.
+  ///
+  /// Usually all event listeners should be already attached when this method
+  /// is invoked.
   void connect() {
     if (_channel != null) throw Error();
 
     _setupChannel();
   }
 
+  /// Removes all previously attached event listeners and closes the connection
+  /// to the server.
   void disconnect() {
     _dispatcher.off();
 
@@ -97,6 +105,10 @@ class Inbox {
     _ready = false;
   }
 
+  /// Returns the list of inbox items already loaded by the inbox.
+  ///
+  /// The list is sorted by the rooms' latest messages (the room with the most
+  /// recent message comes first).
   List<InboxItem> listItems() {
     final list = List<InboxItem>.from(_items.values);
 
@@ -110,8 +122,17 @@ class Inbox {
     return list;
   }
 
+  /// Removes one or more previously attached event listeners.
+  ///
+  /// Both parameters are optional: if no [reference] is given, all listeners
+  /// for the given event are removed; if no [event] is given, then all event
+  /// listeners attached to the instance are removed.
   void off([String? event, String? reference]) =>
       _dispatcher.off(event, reference);
 
+  /// Attaches an event listener.
+  ///
+  /// Returns a short string identifying the attached listener — which string
+  /// can be then used to remove that event listener with [Inbox.off()].
   String on(String event, Function function) => _dispatcher.on(event, function);
 }
