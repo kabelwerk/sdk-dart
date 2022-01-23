@@ -33,6 +33,14 @@ class InboxItemRoom {
         hubId = payload['hub_id'];
 }
 
+class InboxItemsList {
+  final List<InboxItem> items;
+
+  InboxItemsList.fromPayload(Map payload, User user)
+      : items = List<InboxItem>.from(
+            payload['items'].map((item) => InboxItem.fromPayload(item, user)));
+}
+
 class Message {
   final int id;
   final int roomId;

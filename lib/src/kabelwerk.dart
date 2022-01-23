@@ -2,6 +2,7 @@ import 'package:phoenix_wings/phoenix_wings.dart';
 
 import './dispatcher.dart';
 import './events.dart';
+import './inbox.dart';
 import './payloads.dart';
 
 class Kabelwerk {
@@ -23,6 +24,7 @@ class Kabelwerk {
   bool _ready = false;
   User? _user;
 
+  // phoenix
   PhoenixSocket? _socket;
   PhoenixChannel? _privateChannel;
 
@@ -124,4 +126,15 @@ class Kabelwerk {
       _dispatcher.off(event, reference);
 
   String on(String event, Function function) => _dispatcher.on(event, function);
+
+  Inbox openInbox() {
+    var socket = _socket;
+    var user = _user;
+
+    if (socket == null || user == null) {
+      throw Error();
+    }
+
+    return Inbox(socket, user);
+  }
 }

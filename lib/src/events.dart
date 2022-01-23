@@ -22,9 +22,17 @@ class UserUpdated extends Event {
 
 // Inbox events
 
-class InboxReady extends Event {}
+class InboxReady extends Event {
+  final List<InboxItem> items;
 
-class InboxUpdated extends Event {}
+  InboxReady(this.items);
+}
+
+class InboxUpdated extends Event {
+  final List<InboxItem> items;
+
+  InboxUpdated(this.items);
+}
 
 // Room events
 
