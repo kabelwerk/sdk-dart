@@ -1,0 +1,24 @@
+name: dart test
+
+on:
+  push:
+    branches:
+      - master
+
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  run_tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: dart-lang/setup-dart@v1.3
+        with:
+          sdk: stable
+
+      - run: dart pub get
+      - run: dart test
