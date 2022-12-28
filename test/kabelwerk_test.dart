@@ -10,7 +10,7 @@ void main() {
     final run = runServer([Connect(accept: false)]);
 
     final kabelwerk = Kabelwerk();
-    kabelwerk.config(url: run.url);
+    kabelwerk.config.url = run.url;
     kabelwerk.connect();
 
     await run.done;
@@ -20,7 +20,7 @@ void main() {
     final run = runServer([Connect(accept: true)]);
 
     final kabelwerk = Kabelwerk();
-    kabelwerk.config(url: run.url);
+    kabelwerk.config.url = run.url;
 
     kabelwerk.on(
         'connected',
@@ -38,7 +38,7 @@ void main() {
     ]);
 
     final kabelwerk = Kabelwerk();
-    kabelwerk.config(url: run.url);
+    kabelwerk.config.url = run.url;
 
     kabelwerk.on(
         'ready',

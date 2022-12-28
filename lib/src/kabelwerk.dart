@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:phoenix_wings/phoenix_wings.dart';
 
+import './config.dart';
 import './dispatcher.dart';
 import './events.dart';
 import './inbox.dart';
@@ -13,8 +14,7 @@ import './utils.dart';
 /// Kabelwerk backend; it is also used for retrieving and updating the
 /// connected user's info, opening inboxes, and creating and opening rooms.
 class Kabelwerk {
-  String _url = '';
-  String _token = '';
+  final Config config = Config();
 
   final Dispatcher _dispatcher = Dispatcher([
     'error',
@@ -32,9 +32,9 @@ class Kabelwerk {
   PhoenixChannel? _privateChannel;
 
   void _setupSocket() {
-    _socket = PhoenixSocket(_url,
+    _socket = PhoenixSocket(config.url,
         socketOptions: PhoenixSocketOptions(params: {
-          'token': _token,
+          'token': config.token,
           'agent': 'sdk-dart/0.1.0',
         }))
       ..onOpen(() {
@@ -88,24 +88,6 @@ class Kabelwerk {
   void _ensureReady() {
     if (!_ready) {
       throw StateError('This Kabelwerk instance is not ready yet.');
-    }
-  }
-
-  /// Sets the configuration.
-  ///
-  /// - [url] → the URL of the Kabelwerk backend to connect to;
-  /// - [token] → a JWT token identifying the user on behalf of whom the
-  /// connection is established.
-  ///
-  /// The method can be called mutliple times — only the specified values are
-  /// updated.
-  void config({String? url, String? token}) {
-    if (url != null) {
-      _url = url;
-    }
-
-    if (token != null) {
-      _token = token;
     }
   }
 

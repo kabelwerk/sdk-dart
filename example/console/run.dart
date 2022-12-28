@@ -14,7 +14,9 @@ void main(List<String> arguments) {
   final kabelwerk = Kabelwerk();
   Room? room;
 
-  kabelwerk.config(url: parsed['url'], token: parsed['token']);
+  kabelwerk.config
+    ..url = parsed['url']
+    ..token = parsed['token'];
 
   kabelwerk.on('connected', (_) => printStatus('Kabelwerk — connected'));
   kabelwerk.on('disconnected', (_) => printStatus('Kabelwerk — disconnected'));
