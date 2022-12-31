@@ -32,9 +32,7 @@ class Connect {
 
   Connect({this.accept = true});
 
-  Future<WebSocket?> run(HttpServer httpServer) async {
-    final request = await httpServer.first;
-
+  Future<WebSocket?> run(HttpRequest request) async {
     if (accept) {
       final webSocket = await WebSocketTransformer.upgrade(request);
       return webSocket;
@@ -54,7 +52,7 @@ class Join {
 
   Join(this.channel, this.payload, this.reply, {this.accept = true});
 
-  run(WebSocket webSocket) async {
+  Future<void> run(WebSocket webSocket) async {
     final message = Message.fromJson(await webSocket.first);
 
     assert(message.topic == channel);
@@ -67,21 +65,40 @@ class Join {
   }
 }
 
+class Disconnect {
+  final int code;
+
+  Disconnect({this.code = 1000});
+
+  Future<void> run(WebSocket webSocket) async {
+    await webSocket.close(code);
+  }
+}
+
 // A websocket server running in an isolate and listening on a localhost port.
 class Server {
-  final Uri url;
   final List<dynamic> actions;
 
-  Server(this.url, this.actions);
+  Server(this.actions);
 
-  HttpServer? _httpServer;
+  late final Uri url;
+
+  late final HttpServer _httpServer;
+  late final HttpRequest _request;
   WebSocket? _webSocket;
 
-  run() async {
-    _httpServer = await HttpServer.bind(url.host, url.port);
+  Future<void> setUp() async {
+    // port 0 = the system will choose the port
+    _httpServer = await HttpServer.bind('127.0.0.1', 0);
+
+    url = Uri(scheme: 'ws', host: '127.0.0.1', port: _httpServer.port);
+  }
+
+  Future<void> handleRequest() async {
+    _request = await _httpServer.first;
 
     // the first action should be a Connect instance
-    _webSocket = await actions.first.run(_httpServer!);
+    _webSocket = await actions.first.run(_request);
 
     for (final action in actions.sublist(1)) {
       await action.run(_webSocket);
@@ -97,28 +114,21 @@ class ServerRun {
   ServerRun(this.url, this.done);
 }
 
-// A singleton that takes care of spawning servers in isolates.
-class ServerSpawner {
-  static const host = '127.0.0.1';
-  static int nextPort = 42000;
-
-  static ServerRun spawn(List<dynamic> actions) {
-    final receivePort = ReceivePort();
-
-    final url = Uri(scheme: 'ws', host: host, port: nextPort++);
-    final server = Server(url, actions);
-
-    Isolate.spawn((SendPort sendPort) async {
-      await server.run();
-
-      Isolate.exit(sendPort, true);
-    }, receivePort.sendPort);
-
-    return ServerRun(server.url.toString(), receivePort.first);
-  }
-}
-
 // Spawn a websocket server in an isolate to run the given actions.
-ServerRun runServer(List<dynamic> actions) {
-  return ServerSpawner.spawn(actions);
+Future<ServerRun> runServer(List<dynamic> actions) async {
+  final receivePorts = [ReceivePort(), ReceivePort()];
+
+  Isolate.spawn((List<SendPort> sendPorts) async {
+    final server = Server(actions);
+
+    await server.setUp();
+    sendPorts[0].send(server.url.toString());
+
+    await server.handleRequest();
+    Isolate.exit(sendPorts[1], true);
+  }, receivePorts.map((port) => port.sendPort).toList());
+
+  final url = await receivePorts[0].first;
+
+  return ServerRun(url, receivePorts[1].first);
 }

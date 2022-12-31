@@ -31,5 +31,5 @@ class Config {
   /// reconnecting. If you provide both a `token` and a `refreshToken`
   /// function, then the former will be used for the initial connection, and
   /// the latter each time when reconnecting.
-  Function? refreshToken = null;
+  Future<String> Function(String)? refreshToken = null;
 }

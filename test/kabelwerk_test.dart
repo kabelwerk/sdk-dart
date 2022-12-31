@@ -7,7 +7,7 @@ import 'server.dart';
 
 void main() {
   test('connection rejected', () async {
-    final run = runServer([Connect(accept: false)]);
+    final run = await runServer([Connect(accept: false)]);
 
     final kabelwerk = Kabelwerk();
     kabelwerk.config.url = run.url;
@@ -17,7 +17,7 @@ void main() {
   });
 
   test('connected event', () async {
-    final run = runServer([Connect(accept: true)]);
+    final run = await runServer([Connect(accept: true)]);
 
     final kabelwerk = Kabelwerk();
     kabelwerk.config.url = run.url;
@@ -32,7 +32,7 @@ void main() {
   });
 
   test('ready event', () async {
-    final run = runServer([
+    final run = await runServer([
       Connect(),
       Join('private', {}, {'id': 1, 'key': 'test', 'name': 'Test'}),
     ]);
