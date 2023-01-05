@@ -22,11 +22,11 @@ class Connector {
   String _token = '';
   bool _tokenIsRefreshing = false;
 
-  // Init the _socket and attach the event listeners.
-  void _setupSocket() {
+  // Inits the socket and attaches the event listeners.
+  void setupSocket() {
     socket = PhoenixSocket(_config.url,
         socketOptions: PhoenixSocketOptions(params: {
-          'token': _config.token,
+          'token': _token,
           'agent': 'sdk-dart/0.1.0',
         }));
 
@@ -61,10 +61,9 @@ class Connector {
     });
   }
 
-  // set the _token, setup the socket and call socket.connect()
+  // Sets the initial _token and calls socket.connect().
   connect() {
     _token = _config.token;
-    _setupSocket();
 
     // if the connector is configured with a token — use it, regardless of
     // whether it is also configured with a refreshToken function

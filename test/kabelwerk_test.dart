@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 
+import 'package:kabelwerk/src/connector.dart';
 import 'package:kabelwerk/src/events.dart';
 import 'package:kabelwerk/src/kabelwerk.dart';
 
@@ -11,6 +12,7 @@ void main() {
 
     final kabelwerk = Kabelwerk();
     kabelwerk.config.url = run.url;
+    kabelwerk.config.token = 'token';
     kabelwerk.connect();
   });
 
@@ -19,11 +21,14 @@ void main() {
 
     final kabelwerk = Kabelwerk();
     kabelwerk.config.url = run.url;
+    kabelwerk.config.token = 'token';
 
     kabelwerk.on(
         'connected',
         expectAsync1((event) {
           expect(event.runtimeType, equals(Connected));
+
+          expect(kabelwerk.state, equals(ConnectionState.online));
         }, count: 1));
 
     kabelwerk.connect();
@@ -37,11 +42,14 @@ void main() {
 
     final kabelwerk = Kabelwerk();
     kabelwerk.config.url = run.url;
+    kabelwerk.config.token = 'token';
 
     kabelwerk.on(
         'ready',
         expectAsync1((event) {
           expect(event.runtimeType, equals(KabelwerkReady));
+
+          expect(kabelwerk.state, equals(ConnectionState.online));
         }, count: 1));
 
     kabelwerk.connect();

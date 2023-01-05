@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:phoenix_wings/phoenix_wings.dart';
 
 import './config.dart';
+import './connector.dart';
 import './dispatcher.dart';
 import './events.dart';
 import './inbox.dart';
@@ -14,46 +15,28 @@ import './utils.dart';
 /// Kabelwerk backend; it is also used for retrieving and updating the
 /// connected user's info, opening inboxes, and creating and opening rooms.
 class Kabelwerk {
-  final Config config = Config();
+  final config = Config();
 
-  final Dispatcher _dispatcher = Dispatcher([
+  final _dispatcher = Dispatcher([
     'error',
     'ready',
     'connected',
     'disconnected',
-    'reconnected',
     'user_updated',
   ]);
+
+  Connector? _connector;
+  PhoenixChannel? _privateChannel;
 
   User? _user;
   bool _ready = false;
 
-  PhoenixSocket? _socket;
-  PhoenixChannel? _privateChannel;
-
-  void _setupSocket() {
-    _socket = PhoenixSocket(config.url,
-        socketOptions: PhoenixSocketOptions(params: {
-          'token': config.token,
-          'agent': 'sdk-dart/0.1.0',
-        }))
-      ..onOpen(() {
-        if (_ready) {
-          _dispatcher.send('reconnected', Reconnected());
-        } else {
-          _dispatcher.send('connected', Connected());
-        }
-      })
-      ..onClose((_) {
-        _dispatcher.send('disconnected', Disconnected());
-      })
-      ..onError((_) {
-        _dispatcher.send('error', ErrorEvent());
-      });
-  }
+  /// The current [ConnectionState].
+  ConnectionState get state =>
+      (_connector != null) ? _connector!.state : ConnectionState.inactive;
 
   void _setupPrivateChannel() {
-    _privateChannel = _socket?.channel('private');
+    _privateChannel = _connector!.socket.channel('private');
 
     _privateChannel?.on('user_updated', (payload, _ref, _joinRef) {});
 
@@ -96,15 +79,16 @@ class Kabelwerk {
   /// Usually all event listeners should be already attached when this method
   /// is invoked.
   void connect() {
-    if (_socket != null) {
-      throw StateError(
-          "This Kabelwerk instance's .connect() method was already called once.");
+    if (_connector != null) {
+      throw StateError('Kabelwerk is already ${_connector!.state}.');
     }
 
-    _setupSocket();
+    _connector = Connector(config, _dispatcher);
+    _connector!.setupSocket();
+
     _setupPrivateChannel();
 
-    _socket?.connect();
+    _connector!.connect();
   }
 
   /// Creates a chat room between the connected user and a hub.
@@ -139,8 +123,8 @@ class Kabelwerk {
     _privateChannel?.leave();
     _privateChannel = null;
 
-    _socket?.disconnect();
-    _socket = null;
+    _connector?.disconnect();
+    _connector = null;
 
     _user = null;
     _ready = false;
@@ -150,12 +134,6 @@ class Kabelwerk {
   User getUser() {
     _ensureReady();
     return throwIfNull(_user);
-  }
-
-  /// Returns a boolean indicating whether the instance is currently connected
-  /// to the server.
-  bool isConnected() {
-    return _socket?.isConnected ?? false;
   }
 
   /// Removes one or more previously attached event listeners.
@@ -176,7 +154,7 @@ class Kabelwerk {
   Inbox openInbox() {
     _ensureReady();
 
-    final socket = throwIfNull(_socket);
+    final socket = throwIfNull(_connector);
     final user = throwIfNull(_user);
 
     return Inbox(socket, user);
@@ -187,7 +165,7 @@ class Kabelwerk {
   Room openRoom(int roomId) {
     _ensureReady();
 
-    final socket = throwIfNull(_socket);
+    final socket = throwIfNull(_connector);
     final user = throwIfNull(_user);
 
     return Room(socket, user, roomId);

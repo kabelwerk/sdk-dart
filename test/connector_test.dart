@@ -20,6 +20,8 @@ void main() {
   });
 
   test('no token or refreshToken → error', () {
+    connector.setupSocket();
+
     expect(() => connector.connect(), throwsStateError);
   });
 
@@ -29,6 +31,9 @@ void main() {
       config.url = run.url;
       config.token = 'token';
 
+      expect(connector.state, equals(ConnectionState.inactive));
+
+      connector.setupSocket();
       expect(connector.state, equals(ConnectionState.inactive));
 
       connector.connect();
@@ -48,6 +53,7 @@ void main() {
             expect(connector.state, equals(ConnectionState.online));
           }, count: 1));
 
+      connector.setupSocket();
       connector.connect();
     });
 
@@ -64,6 +70,7 @@ void main() {
             expect(connector.state, equals(ConnectionState.connecting));
           }, count: 1));
 
+      connector.setupSocket();
       connector.connect();
     });
 
@@ -88,6 +95,7 @@ void main() {
             expect(connector.state, equals(ConnectionState.inactive));
           }, count: 1));
 
+      connector.setupSocket();
       connector.connect();
     });
   });
@@ -105,6 +113,7 @@ void main() {
             expect(connector.state, equals(ConnectionState.inactive));
           }, count: 1));
 
+      connector.setupSocket();
       connector.connect();
     });
 
@@ -114,6 +123,9 @@ void main() {
       config.refreshToken =
           expectAsync1((_) => Future.value('token'), count: 1);
 
+      expect(connector.state, equals(ConnectionState.inactive));
+
+      connector.setupSocket();
       expect(connector.state, equals(ConnectionState.inactive));
 
       connector.connect();
@@ -134,6 +146,7 @@ void main() {
             expect(connector.state, equals(ConnectionState.online));
           }, count: 1));
 
+      connector.setupSocket();
       connector.connect();
     });
 
@@ -152,6 +165,7 @@ void main() {
             expect(connector.state, equals(ConnectionState.connecting));
           }, count: 1));
 
+      connector.setupSocket();
       connector.connect();
     });
 
@@ -177,6 +191,7 @@ void main() {
             expect(connector.state, equals(ConnectionState.inactive));
           }, count: 1));
 
+      connector.setupSocket();
       connector.connect();
     });
   });
@@ -189,6 +204,9 @@ void main() {
       config.refreshToken =
           expectAsync1((_) => Future.error(Exception('ops')), count: 0);
 
+      expect(connector.state, equals(ConnectionState.inactive));
+
+      connector.setupSocket();
       expect(connector.state, equals(ConnectionState.inactive));
 
       connector.connect();
@@ -210,6 +228,7 @@ void main() {
             expect(connector.state, equals(ConnectionState.online));
           }, count: 1));
 
+      connector.setupSocket();
       connector.connect();
     });
 
@@ -229,6 +248,7 @@ void main() {
             expect(connector.state, equals(ConnectionState.connecting));
           }, count: 1));
 
+      connector.setupSocket();
       connector.connect();
     });
 
@@ -255,6 +275,7 @@ void main() {
             expect(connector.state, equals(ConnectionState.inactive));
           }, count: 1));
 
+      connector.setupSocket();
       connector.connect();
     });
   });

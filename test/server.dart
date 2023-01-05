@@ -126,7 +126,7 @@ class ServerRun {
   ServerRun(this.url, this.done);
 }
 
-// Spawn a websocket server in an isolate to run the given actions.
+// Spawns a websocket server in an isolate to run the given actions.
 Future<ServerRun> runServer(List<dynamic> actions) async {
   final receivePorts = [ReceivePort(), ReceivePort()];
 
