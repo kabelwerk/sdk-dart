@@ -32,6 +32,8 @@ class Connect {
 
   Connect({this.accept = true});
 
+  final expectsMessage = false;
+
   Future<WebSocket?> run(HttpRequest request) async {
     if (accept) {
       final webSocket = await WebSocketTransformer.upgrade(request);
@@ -52,9 +54,9 @@ class Join {
 
   Join(this.channel, this.payload, this.reply, {this.accept = true});
 
-  Future<void> run(WebSocket webSocket) async {
-    final message = Message.fromJson(await webSocket.first);
+  final expectsMessage = true;
 
+  Future<void> run(WebSocket webSocket, Message message) async {
     assert(message.topic == channel);
     assert(message.event == 'phx_join');
     // assert(message.payload == payload);
@@ -70,6 +72,8 @@ class Disconnect {
 
   Disconnect({this.code = 1000});
 
+  final expectsMessage = false;
+
   Future<void> run(WebSocket webSocket) async {
     await webSocket.close(code);
   }
@@ -82,10 +86,7 @@ class Server {
   Server(this.actions);
 
   late final Uri url;
-
   late final HttpServer _httpServer;
-  late final HttpRequest _request;
-  WebSocket? _webSocket;
 
   Future<void> setUp() async {
     // port 0 = the system will choose the port
@@ -95,13 +96,24 @@ class Server {
   }
 
   Future<void> handleRequest() async {
-    _request = await _httpServer.first;
+    final request = await _httpServer.first;
 
     // the first action should be a Connect instance
-    _webSocket = await actions.first.run(_request);
+    final webSocket = await actions.first.run(request);
+
+    if (webSocket == null) return;
+
+    final Stream incomingMessages = webSocket!.asBroadcastStream();
 
     for (final action in actions.sublist(1)) {
-      await action.run(_webSocket);
+      if (action.expectsMessage) {
+        final rawMessage = await incomingMessages.take(1).last;
+        final message = Message.fromJson(rawMessage);
+
+        await action.run(webSocket, message);
+      } else {
+        await action.run(webSocket);
+      }
     }
   }
 }
@@ -130,5 +142,5 @@ Future<ServerRun> runServer(List<dynamic> actions) async {
 
   final url = await receivePorts[0].first;
 
-  return ServerRun(url, receivePorts[1].first);
+  return ServerRun(url, receivePorts[1].single);
 }

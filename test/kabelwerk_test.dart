@@ -12,8 +12,6 @@ void main() {
     final kabelwerk = Kabelwerk();
     kabelwerk.config.url = run.url;
     kabelwerk.connect();
-
-    await run.done;
   });
 
   test('connected event', () async {

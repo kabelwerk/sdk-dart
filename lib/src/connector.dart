@@ -36,7 +36,9 @@ class Connector {
     });
 
     socket.onClose((_) {
-      state = ConnectionState.connecting;
+      if (state != ConnectionState.inactive) {
+        state = ConnectionState.connecting;
+      }
 
       _dispatcher.send('disconnected', Disconnected());
 
@@ -85,9 +87,17 @@ class Connector {
       });
     }
 
-    throw StateError(
-        "Kabelwerk must be configured with either a token or a refreshToken function in order to connect to the server.");
+    throw StateError("Kabelwerk must be configured with either a token "
+        "or a refreshToken function in order to connect to the server.");
   }
 
-  void disconnect() {}
+  void disconnect() {
+    socket.disconnect();
+
+    state = ConnectionState.inactive;
+
+    // unlike its js counterpart, the phoenix_wings socket does not invoke its
+    // onClose callbacks after .disconnect()
+    _dispatcher.send('disconnected', Disconnected());
+  }
 }
