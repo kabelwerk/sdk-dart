@@ -29,13 +29,17 @@ class Message {
 
 class Connect {
   final bool accept;
+  final String token;
 
-  Connect({this.accept = true});
+  Connect({this.accept = true, this.token = 'token'});
 
   final expectsMessage = false;
 
   Future<WebSocket?> run(HttpRequest request) async {
     if (accept) {
+      // TODO: fix phoenix_wings and uncomment
+      // assert(request.requestedUri.queryParameters['token'] == token);
+
       final webSocket = await WebSocketTransformer.upgrade(request);
       return webSocket;
     } else {
@@ -121,26 +125,25 @@ class Server {
 // An object with info needed by tests about the run of a websocket server.
 class ServerRun {
   final String url;
-  final Future<dynamic> done;
+  final token = 'token';
 
-  ServerRun(this.url, this.done);
+  ServerRun(this.url);
 }
 
 // Spawns a websocket server in an isolate to run the given actions.
 Future<ServerRun> runServer(List<dynamic> actions) async {
-  final receivePorts = [ReceivePort(), ReceivePort()];
+  final receivePort = ReceivePort();
 
-  Isolate.spawn((List<SendPort> sendPorts) async {
+  Isolate.spawn((SendPort sendPort) async {
     final server = Server(actions);
 
     await server.setUp();
-    sendPorts[0].send(server.url.toString());
+    sendPort.send(server.url.toString());
 
     await server.handleRequest();
-    Isolate.exit(sendPorts[1], true);
-  }, receivePorts.map((port) => port.sendPort).toList());
+  }, receivePort.sendPort);
 
-  final url = await receivePorts[0].first;
+  final url = await receivePort.first;
 
-  return ServerRun(url, receivePorts[1].single);
+  return ServerRun(url);
 }

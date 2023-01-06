@@ -26,10 +26,10 @@ void main() {
   });
 
   group('connect with token', () {
-    test('socket opening → connecting state', () async {
+    test('socket connecting → connecting state', () async {
       final run = await runServer([Connect()]);
       config.url = run.url;
-      config.token = 'token';
+      config.token = run.token;
 
       expect(connector.state, equals(ConnectionState.inactive));
 
@@ -40,10 +40,27 @@ void main() {
       expect(connector.state, equals(ConnectionState.connecting));
     });
 
-    test('socket opened → connected event, online state', () async {
+    // unlike its js counterpart, the phoenix_wings socket does not invoke its
+    // onError callbacks when it fails to connect
+    test('socket connection rejected → connecting state', () async {
+      final run = await runServer([Connect(accept: false)]);
+      config.url = run.url;
+      config.token = run.token;
+
+      connector.setupSocket();
+      connector.connect();
+
+      Future.delayed(
+          Duration(milliseconds: 100),
+          expectAsync0(() {
+            expect(connector.state, equals(ConnectionState.connecting));
+          }, count: 1));
+    });
+
+    test('socket connected → connected event, online state', () async {
       final run = await runServer([Connect()]);
       config.url = run.url;
-      config.token = 'token';
+      config.token = run.token;
 
       dispatcher.on(
           'connected',
@@ -57,10 +74,11 @@ void main() {
       connector.connect();
     });
 
-    test('socket closed → disconnected event, connecting state', () async {
+    test('socket disconnected → disconnected event, connecting state',
+        () async {
       final run = await runServer([Connect(), Disconnect()]);
       config.url = run.url;
-      config.token = 'token';
+      config.token = run.token;
 
       dispatcher.on(
           'disconnected',
@@ -79,7 +97,7 @@ void main() {
     test('disconnect → disconnected event, inactive state', () async {
       final run = await runServer([Connect()]);
       config.url = run.url;
-      config.token = 'token';
+      config.token = run.token;
 
       dispatcher.on(
           'connected',
@@ -117,11 +135,11 @@ void main() {
       connector.connect();
     });
 
-    test('socket opening → connecting state', () async {
+    test('socket connecting → connecting state', () async {
       final run = await runServer([Connect()]);
       config.url = run.url;
       config.refreshToken =
-          expectAsync1((_) => Future.value('token'), count: 1);
+          expectAsync1((_) => Future.value(run.token), count: 1);
 
       expect(connector.state, equals(ConnectionState.inactive));
 
@@ -132,11 +150,27 @@ void main() {
       expect(connector.state, equals(ConnectionState.connecting));
     });
 
-    test('socket opened → connected event, online state', () async {
+    test('socket connection rejected → connecting state', () async {
+      final run = await runServer([Connect(accept: false)]);
+      config.url = run.url;
+      config.refreshToken =
+          expectAsync1((_) => Future.value(run.token), count: 1);
+
+      connector.setupSocket();
+      connector.connect();
+
+      Future.delayed(
+          Duration(milliseconds: 100),
+          expectAsync0(() {
+            expect(connector.state, equals(ConnectionState.connecting));
+          }, count: 1));
+    });
+
+    test('socket connected → connected event, online state', () async {
       final run = await runServer([Connect()]);
       config.url = run.url;
       config.refreshToken =
-          expectAsync1((_) => Future.value('token'), count: 1);
+          expectAsync1((_) => Future.value(run.token), count: 1);
 
       dispatcher.on(
           'connected',
@@ -150,12 +184,13 @@ void main() {
       connector.connect();
     });
 
-    test('socket closed → disconnected event, refresh token, connecting state',
+    test(
+        'socket disconnected → disconnected event, refresh token, connecting state',
         () async {
       final run = await runServer([Connect(), Disconnect()]);
       config.url = run.url;
       config.refreshToken =
-          expectAsync1((_) => Future.value('token'), count: 2);
+          expectAsync1((_) => Future.value(run.token), count: 2);
 
       dispatcher.on(
           'disconnected',
@@ -175,7 +210,7 @@ void main() {
       final run = await runServer([Connect()]);
       config.url = run.url;
       config.refreshToken =
-          expectAsync1((_) => Future.value('token'), count: 1);
+          expectAsync1((_) => Future.value(run.token), count: 1);
 
       dispatcher.on(
           'connected',
@@ -197,10 +232,10 @@ void main() {
   });
 
   group('connect with token + refreshToken', () {
-    test('socket opening → connecting state', () async {
+    test('socket connecting → connecting state', () async {
       final run = await runServer([Connect()]);
       config.url = run.url;
-      config.token = 'token';
+      config.token = run.token;
       config.refreshToken =
           expectAsync1((_) => Future.error(Exception('ops')), count: 0);
 
@@ -213,10 +248,27 @@ void main() {
       expect(connector.state, equals(ConnectionState.connecting));
     });
 
-    test('socket opened → connected event, online state', () async {
+    test('socket connection rejected → connecting state', () async {
+      final run = await runServer([Connect(accept: false)]);
+      config.url = run.url;
+      config.token = run.token;
+      config.refreshToken =
+          expectAsync1((_) => Future.error(Exception('ops')), count: 0);
+
+      connector.setupSocket();
+      connector.connect();
+
+      Future.delayed(
+          Duration(milliseconds: 100),
+          expectAsync0(() {
+            expect(connector.state, equals(ConnectionState.connecting));
+          }, count: 1));
+    });
+
+    test('socket connected → connected event, online state', () async {
       final run = await runServer([Connect()]);
       config.url = run.url;
-      config.token = 'token';
+      config.token = run.token;
       config.refreshToken =
           expectAsync1((_) => Future.error(Exception('ops')), count: 0);
 
@@ -232,13 +284,14 @@ void main() {
       connector.connect();
     });
 
-    test('socket closed → disconnected event, refresh token, connecting state',
+    test(
+        'socket disconnected → disconnected event, refresh token, connecting state',
         () async {
       final run = await runServer([Connect(), Disconnect()]);
       config.url = run.url;
-      config.token = 'token';
+      config.token = run.token;
       config.refreshToken =
-          expectAsync1((_) => Future.value('token'), count: 1);
+          expectAsync1((_) => Future.value(run.token), count: 1);
 
       dispatcher.on(
           'disconnected',
@@ -257,7 +310,7 @@ void main() {
     test('disconnect → disconnected event, inactive state', () async {
       final run = await runServer([Connect()]);
       config.url = run.url;
-      config.token = 'token';
+      config.token = run.token;
       config.refreshToken =
           expectAsync1((_) => Future.error(Exception('ops')), count: 0);
 
