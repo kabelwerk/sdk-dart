@@ -4,7 +4,7 @@ import 'package:kabelwerk/src/connector.dart';
 import 'package:kabelwerk/src/events.dart';
 import 'package:kabelwerk/src/kabelwerk.dart';
 
-import 'server.dart';
+import 'helpers/server.dart';
 
 void main() {
   group('connection', () {
