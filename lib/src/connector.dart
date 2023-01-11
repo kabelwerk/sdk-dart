@@ -66,22 +66,22 @@ class Connector {
   }
 
   // Sets the initial _token and calls socket.connect().
-  connect() {
+  void connect() {
     _token = _config.token;
 
     // if the connector is configured with a token — use it, regardless of
     // whether it is also configured with a refreshToken function
     if (_token != '') {
       state = ConnectionState.connecting;
-      return socket.connect();
+      socket.connect();
     }
 
     // if the connector is not configured with a token — call refreshToken
     // to obtain the initial token
-    if (_config.refreshToken != null) {
+    else if (_config.refreshToken != null) {
       state = ConnectionState.connecting;
 
-      return _config.refreshToken!(_token).then((String newToken) {
+      _config.refreshToken!(_token).then((String newToken) {
         _token = newToken;
         socket.connect();
       }).catchError((error) {
@@ -90,8 +90,11 @@ class Connector {
       });
     }
 
-    throw StateError("Kabelwerk must be configured with either a token "
-        "or a refreshToken function in order to connect to the server.");
+    // if the connector is not configured properly
+    else {
+      throw StateError("Kabelwerk must be configured with either a token "
+          "or a refreshToken function in order to connect to the server.");
+    }
   }
 
   void disconnect() {

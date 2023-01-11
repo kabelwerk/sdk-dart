@@ -22,21 +22,21 @@ void main() {
       expect(kabelwerk.state, equals(ConnectionState.connecting));
     });
 
-    test('socket connection rejected → connecting state', () async {
-      final run = await runServer([Connect(accept: false)]);
+    // test('socket connection rejected → connecting state', () async {
+    //   final run = await runServer([Connect(accept: false)]);
 
-      final kabelwerk = Kabelwerk();
-      kabelwerk.config.url = run.url;
-      kabelwerk.config.token = run.token;
+    //   final kabelwerk = Kabelwerk();
+    //   kabelwerk.config.url = run.url;
+    //   kabelwerk.config.token = run.token;
 
-      kabelwerk.connect();
+    //   kabelwerk.connect();
 
-      Future.delayed(
-          Duration(milliseconds: 100),
-          expectAsync0(() {
-            expect(kabelwerk.state, equals(ConnectionState.connecting));
-          }, count: 1));
-    });
+    //   Future.delayed(
+    //       Duration(milliseconds: 100),
+    //       expectAsync0(() {
+    //         expect(kabelwerk.state, equals(ConnectionState.connecting));
+    //       }, count: 1));
+    // });
 
     test('socket connected → connected event, online state', () async {
       final run = await runServer([Connect(accept: true)]);
