@@ -1,4 +1,4 @@
-import 'package:phoenix_wings/phoenix_wings.dart';
+import 'package:phoenix_socket/phoenix_socket.dart';
 
 import './config.dart';
 import './dispatcher.dart';
@@ -22,20 +22,24 @@ class Connector {
   String _token = '';
   bool _tokenIsRefreshing = false;
 
+  Future<Map<String, String>> _fetchParams() async {
+    return {
+      'token': _token,
+      'agent': 'sdk-dart/0.1.0',
+    };
+  }
+
   // Inits the socket and attaches the event listeners.
   void setupSocket() {
     socket = PhoenixSocket(_config.url,
-        socketOptions: PhoenixSocketOptions(params: {
-          'token': _token,
-          'agent': 'sdk-dart/0.1.0',
-        }));
+        socketOptions: PhoenixSocketOptions(dynamicParams: _fetchParams));
 
-    socket.onOpen(() {
+    socket.openStream.listen((PhoenixSocketOpenEvent event) {
       state = ConnectionState.online;
       _dispatcher.send('connected', Connected());
     });
 
-    socket.onClose((_) {
+    socket.closeStream.listen((PhoenixSocketCloseEvent event) {
       if (state != ConnectionState.inactive) {
         state = ConnectionState.connecting;
       }
@@ -56,7 +60,7 @@ class Connector {
       }
     });
 
-    socket.onError((_) {
+    socket.errorStream.listen((PhoenixSocketErrorEvent event) {
       _dispatcher.send('error', ErrorEvent());
     });
   }
@@ -91,12 +95,7 @@ class Connector {
   }
 
   void disconnect() {
-    socket.disconnect();
-
     state = ConnectionState.inactive;
-
-    // unlike its js counterpart, the phoenix_wings socket does not invoke its
-    // onClose callbacks after .disconnect()
-    _dispatcher.send('disconnected', Disconnected());
+    socket.close();
   }
 }

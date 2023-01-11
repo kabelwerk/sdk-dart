@@ -4,7 +4,7 @@ import 'dart:isolate';
 
 // A phoenix websocket message.
 class Message {
-  final String joinRef;
+  final String? joinRef; // null for heartbeat messages
   final String ref;
   final String topic;
   final String event;
@@ -37,8 +37,7 @@ class Connect {
 
   Future<WebSocket?> run(HttpRequest request) async {
     if (accept) {
-      // TODO: fix phoenix_wings and uncomment
-      // assert(request.requestedUri.queryParameters['token'] == token);
+      assert(request.requestedUri.queryParameters['token'] == token);
 
       final webSocket = await WebSocketTransformer.upgrade(request);
       return webSocket;
@@ -108,6 +107,11 @@ class Server {
     if (webSocket == null) return;
 
     final Stream incomingMessages = webSocket!.asBroadcastStream();
+
+    // phoenix_socket expects a heartbeat before deeming the connection open
+    final rawMessage = await incomingMessages.take(1).last;
+    final message = Message.fromJson(rawMessage);
+    webSocket.add(message.createReply({}).toJson());
 
     for (final action in actions.sublist(1)) {
       if (action.expectsMessage) {

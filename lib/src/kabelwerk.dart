@@ -1,14 +1,14 @@
 import 'dart:async';
 
-import 'package:phoenix_wings/phoenix_wings.dart';
+import 'package:phoenix_socket/phoenix_socket.dart';
 
 import './config.dart';
 import './connector.dart';
 import './dispatcher.dart';
 import './events.dart';
-import './inbox.dart';
+// import './inbox.dart';
 import './payloads.dart';
-import './room.dart';
+// import './room.dart';
 import './utils.dart';
 
 /// A Kabelwerk instance opens and maintains a websocket connection to the
@@ -36,15 +36,15 @@ class Kabelwerk {
       (_connector != null) ? _connector!.state : ConnectionState.inactive;
 
   void _setupPrivateChannel() {
-    _privateChannel = _connector!.socket.channel('private');
+    _privateChannel = _connector!.socket.addChannel(topic: 'private');
 
-    _privateChannel?.on('user_updated', (payload, _ref, _joinRef) {});
+    // _privateChannel?.on('user_updated', (payload, _ref, _joinRef) {});
 
     _dispatcher.on('connected', (_event) {
       var push = _privateChannel?.join();
 
-      push?.receive('ok', (Map? payload) {
-        var user = User.fromPayload(throwIfNull(payload));
+      push?.onReply('ok', (PushResponse response) {
+        var user = User.fromPayload(throwIfNull(response.response));
 
         if (_user != null) {
           _dispatcher.send('user_updated', UserUpdated(user));
@@ -58,11 +58,11 @@ class Kabelwerk {
         }
       });
 
-      push?.receive('error', (error) {
+      push?.onReply('error', (error) {
         _dispatcher.send('error', ErrorEvent());
       });
 
-      push?.receive('timeout', (error) {
+      push?.onReply('timeout', (error) {
         _dispatcher.send('error', ErrorEvent());
       });
     });
@@ -151,25 +151,25 @@ class Kabelwerk {
   String on(String event, Function function) => _dispatcher.on(event, function);
 
   /// Initialises and returns an [Inbox] instance.
-  Inbox openInbox() {
-    _ensureReady();
+  // Inbox openInbox() {
+  //   _ensureReady();
 
-    final socket = throwIfNull(_connector);
-    final user = throwIfNull(_user);
+  //   final socket = throwIfNull(_connector);
+  //   final user = throwIfNull(_user);
 
-    return Inbox(socket, user);
-  }
+  //   return Inbox(socket, user);
+  // }
 
   /// Initialises and returns a [Room] instance for the chat room with the
   /// given ID.
-  Room openRoom(int roomId) {
-    _ensureReady();
+  // Room openRoom(int roomId) {
+  //   _ensureReady();
 
-    final socket = throwIfNull(_connector);
-    final user = throwIfNull(_user);
+  //   final socket = throwIfNull(_connector);
+  //   final user = throwIfNull(_user);
 
-    return Room(socket, user, roomId);
-  }
+  //   return Room(socket, user, roomId);
+  // }
 
   /// Updates the connected user's info.
   Future<dynamic> updateUser({required String name}) {

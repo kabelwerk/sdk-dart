@@ -7,7 +7,7 @@ repository: https://github.com/kabelwerk/sdk-dart
 issue_tracker: https://github.com/kabelwerk/sdk-dart/issues
 
 dependencies:
-  phoenix_wings: ^1.0.2
+  phoenix_socket: ^0.6.2
 
 dev_dependencies:
   args: ^2.3.0

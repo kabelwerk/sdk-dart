@@ -102,7 +102,11 @@ void main() {
 
     test('socket disconnected → disconnected event, connecting state',
         () async {
-      final run = await runServer([Connect(), Disconnect()]);
+      final run = await runServer([
+        Connect(),
+        Join('private', {}, {'id': 1, 'key': 'test', 'name': 'Test'}),
+        Disconnect(),
+      ]);
 
       final kabelwerk = Kabelwerk();
       kabelwerk.config.url = run.url;
