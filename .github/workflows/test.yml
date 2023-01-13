@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - github-actions
 
   pull_request:
     branches:
@@ -26,12 +25,14 @@ jobs:
           otp-version: '25'
           elixir-version: '1.13.4'
 
-      - working-directory: test/server
+      - name: Set up the test server
+        working-directory: test/server
         run: |
           mix deps.get
           mix compile
 
-      - working-directory: test/server
+      - name: Run the test server
+        working-directory: test/server
         run: mix phx.server &
 
       - run: dart pub get
