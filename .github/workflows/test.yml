@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - github-actions
 
   pull_request:
     branches:
@@ -19,6 +20,15 @@ jobs:
       - uses: dart-lang/setup-dart@v1.3
         with:
           sdk: stable
+
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: '25'
+          elixir-version: '1.13.4'
+
+      - name: Run the test server
+        working-directory: test/server
+        run: mix phx.server &
 
       - run: dart pub get
       - run: dart test
