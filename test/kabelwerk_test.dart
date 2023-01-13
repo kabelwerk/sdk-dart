@@ -8,7 +8,7 @@ const serverUrl = 'ws://localhost:4000/socket/user/websocket';
 
 void main() {
   group('connection', () {
-    test('socket connecting → connecting state', () async {
+    test('socket connecting → connecting state', () {
       final kabelwerk = Kabelwerk();
       kabelwerk.config.url = serverUrl;
       kabelwerk.config.token = 'valid-token';
@@ -19,23 +19,23 @@ void main() {
       expect(kabelwerk.state, equals(ConnectionState.connecting));
     });
 
-    // test('socket connection rejected → connecting state', () async {
-    //   final run = await runServer([Connect(accept: false)]);
+    test('socket connection rejected → error event, connecting state', () {
+      final kabelwerk = Kabelwerk();
+      kabelwerk.config.url = serverUrl;
+      kabelwerk.config.token = 'bad-token';
 
-    //   final kabelwerk = Kabelwerk();
-    //   kabelwerk.config.url = run.url;
-    //   kabelwerk.config.token = run.token;
+      kabelwerk.on(
+          'error',
+          expectAsync1((event) {
+            expect(event.runtimeType, equals(ErrorEvent));
 
-    //   kabelwerk.connect();
+            expect(kabelwerk.state, equals(ConnectionState.connecting));
+          }, count: 1));
 
-    //   Future.delayed(
-    //       Duration(milliseconds: 100),
-    //       expectAsync0(() {
-    //         expect(kabelwerk.state, equals(ConnectionState.connecting));
-    //       }, count: 1));
-    // });
+      kabelwerk.connect();
+    });
 
-    test('socket connected → connected event, online state', () async {
+    test('socket connected → connected event, online state', () {
       final kabelwerk = Kabelwerk();
       kabelwerk.config.url = serverUrl;
       kabelwerk.config.token = 'valid-token';
@@ -74,7 +74,7 @@ void main() {
 
     // test('join timeout → error event, online state', () async {});
 
-    test('join ok → ready event, online state', () async {
+    test('join ok → ready event, online state', () {
       final kabelwerk = Kabelwerk();
       kabelwerk.config.url = serverUrl;
       kabelwerk.config.token = 'valid-token';
@@ -117,11 +117,9 @@ void main() {
 
     test('connected event is emitted each time', () async {});
 
-    // test('disconnect → disconnected event, inactive state', () async {
-    //   final run = await runServer([Connect()]);
-
+    // test('disconnect → disconnected event, inactive state', () {
     //   final kabelwerk = Kabelwerk();
-    //   kabelwerk.config.url = run.url;
+    //   kabelwerk.config.url = serverUrl;
     //   kabelwerk.config.token = run.token;
 
     //   kabelwerk.on(
