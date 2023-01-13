@@ -5,8 +5,6 @@ import 'package:kabelwerk/src/connector.dart';
 import 'package:kabelwerk/src/dispatcher.dart';
 import 'package:kabelwerk/src/events.dart';
 
-import 'helpers/server.dart';
-
 void main() {
   late Config config;
   late Dispatcher dispatcher;
@@ -14,6 +12,8 @@ void main() {
 
   setUp(() {
     config = Config();
+    config.url = 'ws://localhost:4000/socket/user/websocket';
+
     dispatcher = Dispatcher(['error', 'connected', 'disconnected']);
 
     connector = Connector(config, dispatcher);
@@ -27,9 +27,7 @@ void main() {
 
   group('connect with token', () {
     test('socket connecting → connecting state', () async {
-      final run = await runServer([Connect()]);
-      config.url = run.url;
-      config.token = run.token;
+      config.token = 'valid-token';
 
       expect(connector.state, equals(ConnectionState.inactive));
 
@@ -58,9 +56,7 @@ void main() {
     // });
 
     test('socket connected → connected event, online state', () async {
-      final run = await runServer([Connect()]);
-      config.url = run.url;
-      config.token = run.token;
+      config.token = 'valid-token';
 
       dispatcher.on(
           'connected',
@@ -95,9 +91,7 @@ void main() {
     // test('socket error → error event', () {});
 
     test('disconnect → disconnected event, inactive state', () async {
-      final run = await runServer([Connect()]);
-      config.url = run.url;
-      config.token = run.token;
+      config.token = 'valid-token';
 
       dispatcher.on(
           'connected',
@@ -136,10 +130,8 @@ void main() {
     });
 
     test('socket connecting → connecting state', () async {
-      final run = await runServer([Connect()]);
-      config.url = run.url;
       config.refreshToken =
-          expectAsync1((_) => Future.value(run.token), count: 1);
+          expectAsync1((_) => Future.value('valid-token'), count: 1);
 
       expect(connector.state, equals(ConnectionState.inactive));
 
@@ -169,10 +161,8 @@ void main() {
     // });
 
     test('socket connected → connected event, online state', () async {
-      final run = await runServer([Connect()]);
-      config.url = run.url;
       config.refreshToken =
-          expectAsync1((_) => Future.value(run.token), count: 1);
+          expectAsync1((_) => Future.value('valid-token'), count: 1);
 
       dispatcher.on(
           'connected',
@@ -209,10 +199,8 @@ void main() {
     // test('socket error → error event', () {});
 
     test('disconnect → disconnected event, inactive state', () async {
-      final run = await runServer([Connect()]);
-      config.url = run.url;
       config.refreshToken =
-          expectAsync1((_) => Future.value(run.token), count: 1);
+          expectAsync1((_) => Future.value('valid-token'), count: 1);
 
       dispatcher.on(
           'connected',
@@ -235,9 +223,7 @@ void main() {
 
   group('connect with token + refreshToken', () {
     test('socket connecting → connecting state', () async {
-      final run = await runServer([Connect()]);
-      config.url = run.url;
-      config.token = run.token;
+      config.token = 'valid-token';
       config.refreshToken =
           expectAsync1((_) => Future.error(Exception('ops')), count: 0);
 
@@ -270,9 +256,7 @@ void main() {
     // });
 
     test('socket connected → connected event, online state', () async {
-      final run = await runServer([Connect()]);
-      config.url = run.url;
-      config.token = run.token;
+      config.token = 'valid-token';
       config.refreshToken =
           expectAsync1((_) => Future.error(Exception('ops')), count: 0);
 
@@ -312,9 +296,7 @@ void main() {
     // test('socket error → error event', () {});
 
     test('disconnect → disconnected event, inactive state', () async {
-      final run = await runServer([Connect()]);
-      config.url = run.url;
-      config.token = run.token;
+      config.token = 'valid-token';
       config.refreshToken =
           expectAsync1((_) => Future.error(Exception('ops')), count: 0);
 
