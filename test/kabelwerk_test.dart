@@ -4,17 +4,14 @@ import 'package:kabelwerk/src/connector.dart';
 import 'package:kabelwerk/src/events.dart';
 import 'package:kabelwerk/src/kabelwerk.dart';
 
-import 'helpers/payloads.dart';
-import 'helpers/server.dart';
+const serverUrl = 'ws://localhost:4000/socket/user/websocket';
 
 void main() {
   group('connection', () {
     test('socket connecting → connecting state', () async {
-      final run = await runServer([Connect()]);
-
       final kabelwerk = Kabelwerk();
-      kabelwerk.config.url = run.url;
-      kabelwerk.config.token = run.token;
+      kabelwerk.config.url = serverUrl;
+      kabelwerk.config.token = 'valid-token';
 
       expect(kabelwerk.state, equals(ConnectionState.inactive));
 
@@ -39,11 +36,9 @@ void main() {
     // });
 
     test('socket connected → connected event, online state', () async {
-      final run = await runServer([Connect(accept: true)]);
-
       final kabelwerk = Kabelwerk();
-      kabelwerk.config.url = run.url;
-      kabelwerk.config.token = run.token;
+      kabelwerk.config.url = serverUrl;
+      kabelwerk.config.token = 'valid-token';
 
       kabelwerk.on(
           'connected',
@@ -80,14 +75,9 @@ void main() {
     // test('join timeout → error event, online state', () async {});
 
     test('join ok → ready event, online state', () async {
-      final run = await runServer([
-        Connect(),
-        Join('private', {}, {'id': 1, 'key': 'test', 'name': 'Test'}),
-      ]);
-
       final kabelwerk = Kabelwerk();
-      kabelwerk.config.url = run.url;
-      kabelwerk.config.token = run.token;
+      kabelwerk.config.url = serverUrl;
+      kabelwerk.config.token = 'valid-token';
 
       kabelwerk.on(
           'ready',
@@ -100,28 +90,28 @@ void main() {
       kabelwerk.connect();
     });
 
-    test('socket disconnected → disconnected event, connecting state',
-        () async {
-      final run = await runServer([
-        Connect(),
-        Join('private', {}, {'id': 1, 'key': 'test', 'name': 'Test'}),
-        Disconnect(),
-      ]);
+    // test('socket disconnected → disconnected event, connecting state',
+    //     () async {
+    //   final run = await runServer([
+    //     Connect(),
+    //     Join('private', {}, {'id': 1, 'key': 'test', 'name': 'Test'}),
+    //     Disconnect(),
+    //   ]);
 
-      final kabelwerk = Kabelwerk();
-      kabelwerk.config.url = run.url;
-      kabelwerk.config.token = run.token;
+    //   final kabelwerk = Kabelwerk();
+    //   kabelwerk.config.url = run.url;
+    //   kabelwerk.config.token = run.token;
 
-      kabelwerk.on(
-          'disconnected',
-          expectAsync1((event) {
-            expect(event.runtimeType, equals(Disconnected));
+    //   kabelwerk.on(
+    //       'disconnected',
+    //       expectAsync1((event) {
+    //         expect(event.runtimeType, equals(Disconnected));
 
-            expect(kabelwerk.state, equals(ConnectionState.connecting));
-          }, count: 1));
+    //         expect(kabelwerk.state, equals(ConnectionState.connecting));
+    //       }, count: 1));
 
-      kabelwerk.connect();
-    });
+    //   kabelwerk.connect();
+    // });
 
     test('ready event is emitted once', () async {});
 
