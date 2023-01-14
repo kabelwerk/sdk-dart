@@ -1,14 +1,9 @@
 import 'package:phoenix_socket/phoenix_socket.dart';
 
 import './config.dart';
+import './connection_state.dart';
 import './dispatcher.dart';
 import './events.dart';
-
-enum ConnectionState {
-  inactive,
-  connecting,
-  online,
-}
 
 class Connector {
   final Config _config;

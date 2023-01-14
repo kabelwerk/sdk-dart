@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
 
-import 'package:kabelwerk/src/connector.dart';
+import 'package:kabelwerk/src/connection_state.dart';
 import 'package:kabelwerk/src/events.dart';
 import 'package:kabelwerk/src/kabelwerk.dart';
 

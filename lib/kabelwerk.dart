@@ -3,6 +3,7 @@
 library kabelwerk;
 
 export 'src/config.dart';
+export 'src/connection_state.dart';
 export 'src/events.dart';
 export 'src/inbox.dart';
 export 'src/kabelwerk.dart';

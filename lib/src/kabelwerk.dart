@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:phoenix_socket/phoenix_socket.dart';
 
 import './config.dart';
+import './connection_state.dart';
 import './connector.dart';
 import './dispatcher.dart';
 import './events.dart';
@@ -31,7 +32,7 @@ class Kabelwerk {
   User? _user;
   bool _ready = false;
 
-  /// The current [ConnectionState].
+  /// The current connection state.
   ConnectionState get state =>
       (_connector != null) ? _connector!.state : ConnectionState.inactive;
 
