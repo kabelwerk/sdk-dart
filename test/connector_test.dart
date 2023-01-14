@@ -20,23 +20,31 @@ void main() {
     connector = Connector(config, dispatcher);
   });
 
+  tearDown(() {
+    connector.disconnect();
+    dispatcher.off();
+  });
+
   test('no token or refreshToken → error', () {
-    connector.setupSocket();
+    connector.prepareSocket();
 
     expect(() => connector.connect(), throwsStateError);
   });
 
   group('connect with token', () {
-    test('socket connecting → connecting state', () {
+    test('socket connecting → connecting state', () async {
       config.token = 'valid-token';
 
       expect(connector.state, equals(ConnectionState.inactive));
 
-      connector.setupSocket();
+      connector.prepareSocket();
       expect(connector.state, equals(ConnectionState.inactive));
 
-      connector.connect();
+      final future = connector.connect();
       expect(connector.state, equals(ConnectionState.connecting));
+
+      // allows us to call connector.disconnect in the tearDown hook
+      await future;
     });
 
     test('socket connection rejected → error event, connecting state', () {
@@ -50,7 +58,7 @@ void main() {
             expect(connector.state, equals(ConnectionState.connecting));
           }, count: 1));
 
-      connector.setupSocket();
+      connector.prepareSocket();
       connector.connect();
     });
 
@@ -65,7 +73,7 @@ void main() {
             expect(connector.state, equals(ConnectionState.online));
           }, count: 1));
 
-      connector.setupSocket();
+      connector.prepareSocket();
       connector.connect();
     });
 
@@ -83,20 +91,14 @@ void main() {
     //         expect(connector.state, equals(ConnectionState.connecting));
     //       }, count: 1));
 
-    //   connector.setupSocket();
+    //   connector.prepareSocket();
     //   connector.connect();
     // });
 
     // test('socket error → error event', () {});
 
-    test('disconnect → disconnected event, inactive state', () {
+    test('disconnect → disconnected event, inactive state', () async {
       config.token = 'valid-token';
-
-      dispatcher.on(
-          'connected',
-          expectAsync1((_) {
-            connector.disconnect();
-          }, count: 1));
 
       dispatcher.on(
           'disconnected',
@@ -106,8 +108,10 @@ void main() {
             expect(connector.state, equals(ConnectionState.inactive));
           }, count: 1));
 
-      connector.setupSocket();
-      connector.connect();
+      connector.prepareSocket();
+      await connector.connect();
+
+      connector.disconnect();
     });
   });
 
@@ -124,21 +128,24 @@ void main() {
             expect(connector.state, equals(ConnectionState.inactive));
           }, count: 1));
 
-      connector.setupSocket();
+      connector.prepareSocket();
       connector.connect();
     });
 
-    test('socket connecting → connecting state', () {
+    test('socket connecting → connecting state', () async {
       config.refreshToken =
           expectAsync1((_) => Future.value('valid-token'), count: 1);
 
       expect(connector.state, equals(ConnectionState.inactive));
 
-      connector.setupSocket();
+      connector.prepareSocket();
       expect(connector.state, equals(ConnectionState.inactive));
 
-      connector.connect();
+      final future = connector.connect();
       expect(connector.state, equals(ConnectionState.connecting));
+
+      // allows us to call connector.disconnect in the tearDown hook
+      await future;
     });
 
     test('socket connection rejected → error event, connecting state', () {
@@ -154,7 +161,7 @@ void main() {
             expect(connector.state, equals(ConnectionState.connecting));
           }, count: 1));
 
-      connector.setupSocket();
+      connector.prepareSocket();
       connector.connect();
     });
 
@@ -170,7 +177,7 @@ void main() {
             expect(connector.state, equals(ConnectionState.online));
           }, count: 1));
 
-      connector.setupSocket();
+      connector.prepareSocket();
       connector.connect();
     });
 
@@ -190,21 +197,15 @@ void main() {
     //         expect(connector.state, equals(ConnectionState.connecting));
     //       }, count: 1));
 
-    //   connector.setupSocket();
+    //   connector.prepareSocket();
     //   connector.connect();
     // });
 
     // test('socket error → error event', () {});
 
-    test('disconnect → disconnected event, inactive state', () {
+    test('disconnect → disconnected event, inactive state', () async {
       config.refreshToken =
           expectAsync1((_) => Future.value('valid-token'), count: 1);
-
-      dispatcher.on(
-          'connected',
-          expectAsync1((_) {
-            connector.disconnect();
-          }, count: 1));
 
       dispatcher.on(
           'disconnected',
@@ -214,24 +215,29 @@ void main() {
             expect(connector.state, equals(ConnectionState.inactive));
           }, count: 1));
 
-      connector.setupSocket();
-      connector.connect();
+      connector.prepareSocket();
+      await connector.connect();
+
+      connector.disconnect();
     });
   });
 
   group('connect with token + refreshToken', () {
-    test('socket connecting → connecting state', () {
+    test('socket connecting → connecting state', () async {
       config.token = 'valid-token';
       config.refreshToken =
           expectAsync1((_) => Future.error(Exception('ops')), count: 0);
 
       expect(connector.state, equals(ConnectionState.inactive));
 
-      connector.setupSocket();
+      connector.prepareSocket();
       expect(connector.state, equals(ConnectionState.inactive));
 
-      connector.connect();
+      final future = connector.connect();
       expect(connector.state, equals(ConnectionState.connecting));
+
+      // allows us to call connector.disconnect in the tearDown hook
+      await future;
     });
 
     test('socket connection rejected → error event, connecting state', () {
@@ -249,7 +255,7 @@ void main() {
             expect(connector.state, equals(ConnectionState.connecting));
           }, count: 1));
 
-      connector.setupSocket();
+      connector.prepareSocket();
       connector.connect();
     });
 
@@ -266,7 +272,36 @@ void main() {
             expect(connector.state, equals(ConnectionState.online));
           }, count: 1));
 
-      connector.setupSocket();
+      connector.prepareSocket();
+      connector.connect();
+    });
+
+    test('socket connection rejected → refreshToken → socket connected', () {
+      config.token = 'bad-token';
+      config.refreshToken =
+          expectAsync1((_) => Future.value('valid-token'), count: 1);
+
+      // connect with bad-token → error event
+      dispatcher.on(
+          'error',
+          expectAsync1((event) {
+            expect(event.runtimeType, equals(ErrorEvent));
+
+            expect(connector.state, equals(ConnectionState.connecting));
+          }, count: 1));
+
+      // connect with valid-token → connected event
+      dispatcher.on(
+          'connected',
+          expectAsync1((event) {
+            expect(event.runtimeType, equals(Connected));
+
+            expect(connector.state, equals(ConnectionState.online));
+
+            connector.disconnect();
+          }, count: 1));
+
+      connector.prepareSocket();
       connector.connect();
     });
 
@@ -287,22 +322,16 @@ void main() {
     //         expect(connector.state, equals(ConnectionState.connecting));
     //       }, count: 1));
 
-    //   connector.setupSocket();
+    //   connector.prepareSocket();
     //   connector.connect();
     // });
 
     // test('socket error → error event', () {});
 
-    test('disconnect → disconnected event, inactive state', () {
+    test('disconnect → disconnected event, inactive state', () async {
       config.token = 'valid-token';
       config.refreshToken =
           expectAsync1((_) => Future.error(Exception('ops')), count: 0);
-
-      dispatcher.on(
-          'connected',
-          expectAsync1((_) {
-            connector.disconnect();
-          }, count: 1));
 
       dispatcher.on(
           'disconnected',
@@ -312,8 +341,10 @@ void main() {
             expect(connector.state, equals(ConnectionState.inactive));
           }, count: 1));
 
-      connector.setupSocket();
-      connector.connect();
+      connector.prepareSocket();
+      await connector.connect();
+
+      connector.disconnect();
     });
   });
 }

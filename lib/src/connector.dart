@@ -17,7 +17,7 @@ class Connector {
   String _token = '';
   bool _tokenIsRefreshing = false;
 
-  Future<Map<String, String>> _fetchParams() async {
+  Future<Map<String, String>> _getParams() async {
     return {
       'token': _token,
       'agent': 'sdk-dart/0.1.0',
@@ -25,9 +25,9 @@ class Connector {
   }
 
   // Inits the socket and attaches the event listeners.
-  void setupSocket() {
+  void prepareSocket() {
     socket = PhoenixSocket(_config.url,
-        socketOptions: PhoenixSocketOptions(dynamicParams: _fetchParams));
+        socketOptions: PhoenixSocketOptions(dynamicParams: _getParams));
 
     socket.openStream.listen((PhoenixSocketOpenEvent event) {
       state = ConnectionState.online;
@@ -61,24 +61,24 @@ class Connector {
   }
 
   // Sets the initial _token and calls socket.connect().
-  void connect() {
+  Future<PhoenixSocket?> connect() {
     _token = _config.token;
 
     // if the connector is configured with a token — use it, regardless of
     // whether it is also configured with a refreshToken function
     if (_token != '') {
       state = ConnectionState.connecting;
-      socket.connect();
+      return socket.connect();
     }
 
     // if the connector is not configured with a token — call refreshToken
     // to obtain the initial token
-    else if (_config.refreshToken != null) {
+    if (_config.refreshToken != null) {
       state = ConnectionState.connecting;
 
-      _config.refreshToken!(_token).then((String newToken) {
+      return _config.refreshToken!(_token).then((String newToken) {
         _token = newToken;
-        socket.connect();
+        return socket.connect();
       }).catchError((error) {
         state = ConnectionState.inactive;
         _dispatcher.send('error', ErrorEvent());
@@ -86,10 +86,8 @@ class Connector {
     }
 
     // if the connector is not configured properly
-    else {
-      throw StateError("Kabelwerk must be configured with either a token "
-          "or a refreshToken function in order to connect to the server.");
-    }
+    throw StateError("Kabelwerk must be configured with either a token "
+        "or a refreshToken function in order to connect to the server.");
   }
 
   void disconnect() {

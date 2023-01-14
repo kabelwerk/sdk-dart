@@ -79,17 +79,21 @@ class Kabelwerk {
   ///
   /// Usually all event listeners should be already attached when this method
   /// is invoked.
-  void connect() {
+  ///
+  /// Returns a [Future] which resolves when the first connection attempt is
+  /// carried out. However, note that connection may not always succeed on the
+  /// first attempt — for state changes, do rely on the events instead.
+  Future<PhoenixSocket?> connect() {
     if (_connector != null) {
       throw StateError('Kabelwerk is already ${_connector!.state}.');
     }
 
     _connector = Connector(config, _dispatcher);
-    _connector!.setupSocket();
+    _connector!.prepareSocket();
 
     _setupPrivateChannel();
 
-    _connector!.connect();
+    return _connector!.connect();
   }
 
   /// Creates a chat room between the connected user and a hub.
