@@ -7,5 +7,5 @@ export 'src/connection_state.dart';
 export 'src/events.dart';
 export 'src/inbox.dart';
 export 'src/kabelwerk.dart';
-export 'src/payloads.dart' show User, InboxItem, InboxItemRoom, Message;
+export 'src/models.dart';
 export 'src/room.dart';

@@ -8,7 +8,7 @@ import './connector.dart';
 import './dispatcher.dart';
 import './events.dart';
 // import './inbox.dart';
-import './payloads.dart';
+import './models.dart';
 // import './room.dart';
 import './utils.dart';
 
@@ -16,6 +16,7 @@ import './utils.dart';
 /// Kabelwerk backend; it is also used for retrieving and updating the
 /// connected user's info, opening inboxes, and creating and opening rooms.
 class Kabelwerk {
+  /// The current configuration.
   final config = Config();
 
   final _dispatcher = Dispatcher([
@@ -36,6 +37,9 @@ class Kabelwerk {
   ConnectionState get state =>
       (_connector != null) ? _connector!.state : ConnectionState.inactive;
 
+  /// The connected user.
+  get user => _user;
+
   void _setupPrivateChannel() {
     _privateChannel = _connector!.socket.addChannel(topic: 'private');
 
@@ -45,7 +49,7 @@ class Kabelwerk {
       var push = _privateChannel?.join();
 
       push?.onReply('ok', (PushResponse response) {
-        var user = User.fromPayload(throwIfNull(response.response));
+        final user = User.fromPayload(response.response);
 
         if (_user != null) {
           _dispatcher.send('user_updated', UserUpdated(user));

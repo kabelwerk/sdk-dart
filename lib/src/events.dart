@@ -1,4 +1,4 @@
-import './payloads.dart';
+import './models.dart';
 
 /// The base class for all events in the library.
 class Event {}

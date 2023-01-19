@@ -3,6 +3,7 @@ import 'package:test/test.dart';
 import 'package:kabelwerk/src/connection_state.dart';
 import 'package:kabelwerk/src/events.dart';
 import 'package:kabelwerk/src/kabelwerk.dart';
+import 'package:kabelwerk/src/models.dart';
 
 const serverUrl = 'ws://localhost:4000/socket/user/websocket';
 
@@ -142,7 +143,34 @@ void main() {
     // test('disconnect removes the event listeners', () async {});
   });
 
-  group('user info', () {});
+  group('user info', () {
+    late Kabelwerk kabelwerk;
+
+    setUp(() {
+      kabelwerk = Kabelwerk();
+
+      kabelwerk.config.url = serverUrl;
+      kabelwerk.config.token = 'valid-token';
+
+      // return a future for async setUp
+      return kabelwerk.connect();
+    });
+
+    tearDown(() {
+      kabelwerk.disconnect();
+    });
+
+    test('get user', () {
+      kabelwerk.on('ready', expectAsync1((_event) {
+        expect(kabelwerk.user.runtimeType, equals(User));
+
+        // see test/server/lib/server_web/channels/private_channel.ex
+        expect(kabelwerk.user.id, equals(1));
+        expect(kabelwerk.user.key, equals('test_user'));
+        expect(kabelwerk.user.name, equals('Test User'));
+      }));
+    });
+  });
 
   group('update device', () {});
 
