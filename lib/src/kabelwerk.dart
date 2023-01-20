@@ -43,33 +43,36 @@ class Kabelwerk {
   void _setupPrivateChannel() {
     _privateChannel = _connector!.socket.addChannel(topic: 'private');
 
-    // _privateChannel?.on('user_updated', (payload, _ref, _joinRef) {});
+    _privateChannel!.messages.listen((message) {
+      if (message.event.value == 'user_updated') {
+        final user = User.fromPayload(message.payload!);
+        _user = user;
+        _dispatcher.send('user_updated', UserUpdated(user));
+      }
+    });
 
     _dispatcher.on('connected', (_event) {
-      var push = _privateChannel?.join();
+      _privateChannel!.join()
+        ..onReply('ok', (PushResponse response) {
+          final user = User.fromPayload(response.response);
 
-      push?.onReply('ok', (PushResponse response) {
-        final user = User.fromPayload(response.response);
+          if (_user != null) {
+            _dispatcher.send('user_updated', UserUpdated(user));
+          }
 
-        if (_user != null) {
-          _dispatcher.send('user_updated', UserUpdated(user));
-        }
+          _user = user;
 
-        _user = user;
-
-        if (!_ready) {
-          _ready = true;
-          _dispatcher.send('ready', KabelwerkReady());
-        }
-      });
-
-      push?.onReply('error', (error) {
-        _dispatcher.send('error', ErrorEvent());
-      });
-
-      push?.onReply('timeout', (error) {
-        _dispatcher.send('error', ErrorEvent());
-      });
+          if (_ready == false) {
+            _ready = true;
+            _dispatcher.send('ready', KabelwerkReady());
+          }
+        })
+        ..onReply('error', (error) {
+          _dispatcher.send('error', ErrorEvent());
+        })
+        ..onReply('timeout', (error) {
+          _dispatcher.send('error', ErrorEvent());
+        });
     });
   }
 
@@ -156,7 +159,7 @@ class Kabelwerk {
   /// Attaches an event listener.
   ///
   /// Returns a short string identifying the attached listener — which string
-  /// can be then used to remove that event listener with [Kabelwerk.off()].
+  /// can be then used to remove that event listener with [Kabelwerk.off].
   String on(String event, Function function) => _dispatcher.on(event, function);
 
   /// Initialises and returns an [Inbox] instance.
@@ -180,23 +183,22 @@ class Kabelwerk {
   //   return Room(socket, user, roomId);
   // }
 
-  /// Updates the connected user's info.
-  Future<dynamic> updateUser({required String name}) {
+  /// Updates the connected user's name.
+  Future<User> updateUser({required String name}) {
     _ensureReady();
 
-    final privateChannel = throwIfNull(_privateChannel);
-    final completer = Completer();
+    final Completer<User> completer = Completer();
 
-    privateChannel.push(event: 'update_user', payload: {'name': name})
-      ..receive('ok', (Map? payload) {
-        final user = User.fromPayload(throwIfNull(payload));
+    _privateChannel!.push('update_user', {'name': name})
+      ..onReply('ok', (PushResponse response) {
+        final user = User.fromPayload(response.response);
         _user = user;
         completer.complete(user);
       })
-      ..receive('error', (error) {
+      ..onReply('error', (error) {
         completer.completeError(ErrorEvent());
       })
-      ..receive('timeout', (error) {
+      ..onReply('timeout', (error) {
         completer.completeError(ErrorEvent());
       });
 

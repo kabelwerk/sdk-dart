@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:test/test.dart';
 
 import 'package:kabelwerk/src/connection_state.dart';
@@ -147,13 +149,17 @@ void main() {
     late Kabelwerk kabelwerk;
 
     setUp(() {
-      kabelwerk = Kabelwerk();
+      final completer = Completer();
 
+      kabelwerk = Kabelwerk();
       kabelwerk.config.url = serverUrl;
       kabelwerk.config.token = 'valid-token';
 
+      kabelwerk.on('ready', completer.complete);
+      kabelwerk.connect();
+
       // return a future for async setUp
-      return kabelwerk.connect();
+      return completer.future;
     });
 
     tearDown(() {
@@ -161,14 +167,48 @@ void main() {
     });
 
     test('get user', () {
-      kabelwerk.on('ready', expectAsync1((_event) {
-        expect(kabelwerk.user.runtimeType, equals(User));
+      expect(kabelwerk.user.runtimeType, equals(User));
 
-        // see test/server/lib/server_web/channels/private_channel.ex
-        expect(kabelwerk.user.id, equals(1));
-        expect(kabelwerk.user.key, equals('test_user'));
-        expect(kabelwerk.user.name, equals('Test User'));
-      }));
+      // see test/server/lib/server_web/channels/private_channel.ex
+      expect(kabelwerk.user.id, equals(1));
+      expect(kabelwerk.user.key, equals('test_user'));
+      expect(kabelwerk.user.name, equals('Test User'));
+    });
+
+    test('update user ok → future resolves, user_updated event', () {
+      kabelwerk.on(
+          'user_updated',
+          expectAsync1((UserUpdated event) {
+            expect(event.user.runtimeType, equals(User));
+            expect(event.user.id, equals(1));
+            expect(event.user.key, equals('test_user'));
+            expect(event.user.name, equals('Valid Name'));
+
+            expect(kabelwerk.user, equals(event.user));
+          }, count: 1));
+
+      final future = kabelwerk.updateUser(name: 'Valid Name');
+
+      future
+          .then(expectAsync1((User user) {
+            expect(user.id, equals(1));
+            expect(user.key, equals('test_user'));
+            expect(user.name, equals('Valid Name'));
+
+            expect(kabelwerk.user, equals(user));
+          }, count: 1))
+          .catchError(expectAsync1((error) {}, count: 0));
+    });
+
+    test('update user error → future rejected', () {
+      final future = kabelwerk.updateUser(name: 'Invalid Name');
+
+      future
+          .then(expectAsync1((_) {}, count: 0))
+          .catchError(expectAsync1((error) {
+            expect(error.runtimeType, equals(ErrorEvent));
+            expect(kabelwerk.user.name, equals('Test User'));
+          }, count: 1));
     });
   });
 
