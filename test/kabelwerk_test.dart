@@ -145,7 +145,7 @@ void main() {
     // test('disconnect removes the event listeners', () async {});
   });
 
-  group('user info', () {
+  group('user', () {
     late Kabelwerk kabelwerk;
 
     setUp(() {
@@ -212,7 +212,53 @@ void main() {
     });
   });
 
-  group('update device', () {});
+  group('device', () {
+    late Kabelwerk kabelwerk;
+
+    setUp(() {
+      final completer = Completer();
+
+      kabelwerk = Kabelwerk();
+      kabelwerk.config.url = serverUrl;
+      kabelwerk.config.token = 'valid-token';
+
+      kabelwerk.on('ready', completer.complete);
+      kabelwerk.connect();
+
+      // return a future for async setUp
+      return completer.future;
+    });
+
+    tearDown(() {
+      kabelwerk.disconnect();
+    });
+
+    test('update device ok → future resolves', () {
+      final future = kabelwerk.updateDevice(
+          pushNotificationsToken: 'valid-token',
+          pushNotificationsEnabled: true);
+
+      future
+          .then(expectAsync1((Device device) {
+            // see test/server/lib/server_web/channels/private_channel.ex
+            expect(device.id, equals(1));
+            expect(device.pushNotificationsToken, equals('valid-token'));
+            expect(device.pushNotificationsEnabled, equals(true));
+          }, count: 1))
+          .catchError(expectAsync1((error) {}, count: 0));
+    });
+
+    test('update device error → future rejected', () {
+      final future = kabelwerk.updateDevice(
+          pushNotificationsToken: 'bad-token', pushNotificationsEnabled: true);
+
+      future
+          .then(expectAsync1((_) {}, count: 0))
+          .catchError(expectAsync1((error) {
+            expect(error.runtimeType, equals(ErrorEvent));
+          }, count: 1));
+    });
+  });
 
   group('create room', () {});
 }

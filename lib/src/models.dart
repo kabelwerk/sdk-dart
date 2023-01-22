@@ -32,6 +32,24 @@ class User {
         name = data['name'];
 }
 
+/// The currently connected device.
+class Device {
+  /// The device's unique integer ID.
+  final int id;
+
+  /// The [Firebase registration
+  /// token](https://firebase.google.com/docs/cloud-messaging) for this device.
+  final String pushNotificationsToken;
+
+  /// Whether to send push notifications to this device.
+  final bool pushNotificationsEnabled;
+
+  Device.fromPayload(Map data)
+      : id = data['id'],
+        pushNotificationsToken = data['push_notifications_token'],
+        pushNotificationsEnabled = data['push_notifications_enabled'];
+}
+
 /// The possible chat message types.
 enum MessageType {
   text,

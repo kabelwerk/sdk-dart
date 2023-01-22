@@ -183,6 +183,37 @@ class Kabelwerk {
   //   return Room(socket, user, roomId);
   // }
 
+  /// Set and/or update push notifications settings for the currently connected
+  /// device.
+  ///
+  /// If you do not want to have push notifications, you can safely ignore this
+  /// method — in which case also no information about the currently connected
+  /// device will be stored in the Kabelwerk database.
+  Future<Device> updateDevice(
+      {required String pushNotificationsToken,
+      required bool pushNotificationsEnabled}) {
+    _ensureReady();
+
+    final Completer<Device> completer = Completer();
+
+    _privateChannel!.push('update_device', {
+      'push_notifications_token': pushNotificationsToken,
+      'push_notifications_enabled': pushNotificationsEnabled
+    })
+      ..onReply('ok', (PushResponse response) {
+        final device = Device.fromPayload(response.response);
+        completer.complete(device);
+      })
+      ..onReply('error', (error) {
+        completer.completeError(ErrorEvent());
+      })
+      ..onReply('timeout', (error) {
+        completer.completeError(ErrorEvent());
+      });
+
+    return completer.future;
+  }
+
   /// Updates the connected user's name.
   Future<User> updateUser({required String name}) {
     _ensureReady();
