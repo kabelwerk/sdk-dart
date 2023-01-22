@@ -23,26 +23,50 @@ class Dispatcher {
     return (++_lastReference).toString();
   }
 
+  /// Emits an event.
+  ///
+  /// Invoke the callbacks registered for the event with the given params.
   void send(String event, dynamic params) {
     _checkEventName(event);
 
-    _callbacks.forEach((Callback callback) {
+    // separate list to prevent concurrent modification of _callbacks because
+    // of one-time callbacks
+    final List<Callback> relevantCallbacks = [];
+
+    for (final callback in _callbacks) {
       if (callback.event == event) {
-        callback.function(params);
+        relevantCallbacks.add(callback);
       }
-    });
+    }
+
+    for (final callback in relevantCallbacks) {
+      callback.function(params);
+    }
   }
 
+  /// Registers a callback for an event.
+  ///
+  /// Whenever the event is emitted, the callback is invoked with the params
+  /// provided to [send].
+  ///
+  /// Returns a reference which can be used to clear the callback without
+  /// affecting the other callbacks attached to the event.
   String on(String event, Function function) {
     _checkEventName(event);
 
-    var reference = _generateReference();
-    var callback = Callback(reference, event, function);
+    final reference = _generateReference();
+    final callback = Callback(reference, event, function);
     _callbacks.add(callback);
 
     return reference;
   }
 
+  /// Removes a registered callback.
+  ///
+  /// If no reference to a particular callback is provided, clears all
+  /// callbacks registered with the event.
+  ///
+  /// If no event is specified, clears all registered callbacks.
   void off([String? event, String? reference]) {
     if (event != null) {
       _checkEventName(event);
@@ -61,5 +85,26 @@ class Dispatcher {
     } else {
       _callbacks.clear();
     }
+  }
+
+  /// Registers a one-time callback for event.
+  ///
+  /// The callback is automatically removed after the first time the event is
+  /// emitted.
+  ///
+  /// Just as [on], returns a reference which can be used to clear the callback
+  /// before it has been invoked.
+  String once(String event, Function function) {
+    _checkEventName(event);
+
+    final reference = _generateReference();
+
+    final callback = Callback(reference, event, (params) {
+      function(params);
+      off(event, reference);
+    });
+    _callbacks.add(callback);
+
+    return reference;
   }
 }

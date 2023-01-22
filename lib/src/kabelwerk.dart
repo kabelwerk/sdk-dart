@@ -51,7 +51,7 @@ class Kabelwerk {
       }
     });
 
-    _dispatcher.on('connected', (_event) {
+    _dispatcher.once('connected', (_event) {
       _privateChannel!.join()
         ..onReply('ok', (PushResponse response) {
           final user = User.fromPayload(response.response);
