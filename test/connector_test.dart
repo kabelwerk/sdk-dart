@@ -77,23 +77,18 @@ void main() {
       connector.connect();
     });
 
-    // test('socket disconnected → disconnected event, connecting state',
-    //     () async {
-    //   final run = await runServer([Connect(), Disconnect()]);
-    //   config.url = run.url;
-    //   config.token = run.token;
+    test('socket disconnected → disconnected event, connecting state', () {
+      config.token = 'connect-then-disconnect';
 
-    //   dispatcher.on(
-    //       'disconnected',
-    //       expectAsync1((event) {
-    //         expect(event.runtimeType, equals(Disconnected));
+      dispatcher.on(
+          'disconnected',
+          expectAsync1((Disconnected event) {
+            expect(connector.state, equals(ConnectionState.connecting));
+          }, count: 1));
 
-    //         expect(connector.state, equals(ConnectionState.connecting));
-    //       }, count: 1));
-
-    //   connector.prepareSocket();
-    //   connector.connect();
-    // });
+      connector.prepareSocket();
+      connector.connect();
+    });
 
     // test('socket error → error event', () {});
 
@@ -181,25 +176,23 @@ void main() {
       connector.connect();
     });
 
-    // test(
-    //     'socket disconnected → disconnected event, refresh token, connecting state',
-    //     () async {
-    //   final run = await runServer([Connect(), Disconnect()]);
-    //   config.url = run.url;
-    //   config.refreshToken =
-    //       expectAsync1((_) => Future.value(run.token), count: 2);
+    test(
+        'socket disconnected → disconnected event, refresh token, connecting state',
+        () {
+      config.refreshToken = expectAsync1(
+          (prevToken) => Future.value(
+              prevToken == '' ? 'connect-then-disconnect' : 'valid-token'),
+          count: 2);
 
-    //   dispatcher.on(
-    //       'disconnected',
-    //       expectAsync1((event) {
-    //         expect(event.runtimeType, equals(Disconnected));
+      dispatcher.on(
+          'disconnected',
+          expectAsync1((Disconnected event) {
+            expect(connector.state, equals(ConnectionState.connecting));
+          }, count: 1));
 
-    //         expect(connector.state, equals(ConnectionState.connecting));
-    //       }, count: 1));
-
-    //   connector.prepareSocket();
-    //   connector.connect();
-    // });
+      connector.prepareSocket();
+      connector.connect();
+    });
 
     // test('socket error → error event', () {});
 
@@ -305,26 +298,22 @@ void main() {
       connector.connect();
     });
 
-    // test(
-    //     'socket disconnected → disconnected event, refresh token, connecting state',
-    //     () async {
-    //   final run = await runServer([Connect(), Disconnect()]);
-    //   config.url = run.url;
-    //   config.token = run.token;
-    //   config.refreshToken =
-    //       expectAsync1((_) => Future.value(run.token), count: 1);
+    test(
+        'socket disconnected → disconnected event, refresh token, connecting state',
+        () {
+      config.token = 'connect-then-disconnect';
+      config.refreshToken =
+          expectAsync1((_) => Future.value('valid-token'), count: 1);
 
-    //   dispatcher.on(
-    //       'disconnected',
-    //       expectAsync1((event) {
-    //         expect(event.runtimeType, equals(Disconnected));
+      dispatcher.on(
+          'disconnected',
+          expectAsync1((Disconnected event) {
+            expect(connector.state, equals(ConnectionState.connecting));
+          }, count: 1));
 
-    //         expect(connector.state, equals(ConnectionState.connecting));
-    //       }, count: 1));
-
-    //   connector.prepareSocket();
-    //   connector.connect();
-    // });
+      connector.prepareSocket();
+      connector.connect();
+    });
 
     // test('socket error → error event', () {});
 

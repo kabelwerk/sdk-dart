@@ -127,11 +127,8 @@ class Kabelwerk {
     return completer.future;
   }
 
-  /// Removes all previously attached event listeners and closes the connection
-  /// to the server.
+  /// Closes the connection to the server.
   void disconnect() {
-    _dispatcher.off();
-
     _privateChannel?.leave();
     _privateChannel = null;
 
@@ -183,8 +180,8 @@ class Kabelwerk {
   //   return Room(socket, user, roomId);
   // }
 
-  /// Set and/or update push notifications settings for the currently connected
-  /// device.
+  /// Sets and/or updates the push notifications settings for the currently
+  /// connected device.
   ///
   /// If you do not want to have push notifications, you can safely ignore this
   /// method — in which case also no information about the currently connected

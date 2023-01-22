@@ -29,9 +29,7 @@ void main() {
 
       kabelwerk.on(
           'error',
-          expectAsync1((event) {
-            expect(event.runtimeType, equals(ErrorEvent));
-
+          expectAsync1((ErrorEvent event) {
             expect(kabelwerk.state, equals(ConnectionState.connecting));
           }, count: 1));
 
@@ -45,9 +43,7 @@ void main() {
 
       kabelwerk.on(
           'connected',
-          expectAsync1((event) {
-            expect(event.runtimeType, equals(Connected));
-
+          expectAsync1((Connected event) {
             expect(kabelwerk.state, equals(ConnectionState.online));
           }, count: 1));
 
@@ -75,8 +71,6 @@ void main() {
     //   kabelwerk.connect();
     // });
 
-    // test('join timeout → error event, online state', () async {});
-
     test('join ok → ready event, online state', () {
       final kabelwerk = Kabelwerk();
       kabelwerk.config.url = serverUrl;
@@ -84,65 +78,45 @@ void main() {
 
       kabelwerk.on(
           'ready',
-          expectAsync1((event) {
-            expect(event.runtimeType, equals(KabelwerkReady));
-
+          expectAsync1((KabelwerkReady event) {
             expect(kabelwerk.state, equals(ConnectionState.online));
           }, count: 1));
 
       kabelwerk.connect();
     });
 
-    // test('socket disconnected → disconnected event, connecting state',
-    //     () async {
-    //   final run = await runServer([
-    //     Connect(),
-    //     Join('private', {}, {'id': 1, 'key': 'test', 'name': 'Test'}),
-    //     Disconnect(),
-    //   ]);
+    test('socket disconnected → disconnected event, connecting state', () {
+      final kabelwerk = Kabelwerk();
+      kabelwerk.config.url = serverUrl;
+      kabelwerk.config.token = 'connect-then-disconnect';
 
-    //   final kabelwerk = Kabelwerk();
-    //   kabelwerk.config.url = run.url;
-    //   kabelwerk.config.token = run.token;
+      kabelwerk.on(
+          'disconnected',
+          expectAsync1((Disconnected event) {
+            expect(kabelwerk.state, equals(ConnectionState.connecting));
+          }, count: 1));
 
-    //   kabelwerk.on(
-    //       'disconnected',
-    //       expectAsync1((event) {
-    //         expect(event.runtimeType, equals(Disconnected));
+      kabelwerk.connect();
+    });
 
-    //         expect(kabelwerk.state, equals(ConnectionState.connecting));
-    //       }, count: 1));
+    // test('ready event is emitted once', () async {});
 
-    //   kabelwerk.connect();
-    // });
+    // test('connected event is emitted each time', () async {});
 
-    test('ready event is emitted once', () async {});
+    test('disconnect → disconnected event, inactive state', () async {
+      final kabelwerk = Kabelwerk();
+      kabelwerk.config.url = serverUrl;
+      kabelwerk.config.token = 'valid-token';
 
-    test('connected event is emitted each time', () async {});
+      kabelwerk.on(
+          'disconnected',
+          expectAsync1((Disconnected event) {
+            expect(kabelwerk.state, equals(ConnectionState.inactive));
+          }, count: 1));
 
-    // test('disconnect → disconnected event, inactive state', () {
-    //   final kabelwerk = Kabelwerk();
-    //   kabelwerk.config.url = serverUrl;
-    //   kabelwerk.config.token = run.token;
-
-    //   kabelwerk.on(
-    //       'connected',
-    //       expectAsync1((_) {
-    //         kabelwerk.disconnect();
-    //       }, count: 1));
-
-    //   kabelwerk.on(
-    //       'disconnected',
-    //       expectAsync1((event) {
-    //         expect(event.runtimeType, equals(Disconnected));
-
-    //         expect(kabelwerk.state, equals(ConnectionState.inactive));
-    //       }, count: 1));
-
-    //   kabelwerk.connect();
-    // });
-
-    // test('disconnect removes the event listeners', () async {});
+      await kabelwerk.connect();
+      kabelwerk.disconnect();
+    });
   });
 
   group('user', () {
@@ -205,8 +179,7 @@ void main() {
 
       future
           .then(expectAsync1((_) {}, count: 0))
-          .catchError(expectAsync1((error) {
-            expect(error.runtimeType, equals(ErrorEvent));
+          .catchError(expectAsync1((ErrorEvent error) {
             expect(kabelwerk.user.name, equals('Test User'));
           }, count: 1));
     });

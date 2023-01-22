@@ -10,10 +10,16 @@ defmodule Server.Application do
     children = [
       # Start the Telemetry supervisor
       ServerWeb.Telemetry,
+
       # Start the PubSub system
       {Phoenix.PubSub, name: Server.PubSub},
+
       # Start the Endpoint (http/https)
-      ServerWeb.Endpoint
+      ServerWeb.Endpoint,
+
+      # Start the Lumberjack GenServer
+      ServerWeb.Lumberjack
+
       # Start a worker by calling: Server.Worker.start_link(arg)
       # {Server.Worker, arg}
     ]
