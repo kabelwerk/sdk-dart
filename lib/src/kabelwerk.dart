@@ -33,12 +33,23 @@ class Kabelwerk {
   User? _user;
   bool _ready = false;
 
+  //
+  // getters
+  //
+
   /// The current connection state.
-  ConnectionState get state =>
+  get state =>
       (_connector != null) ? _connector!.state : ConnectionState.inactive;
 
   /// The connected user.
-  get user => _user;
+  get user {
+    _ensureReady();
+    return _user;
+  }
+
+  //
+  // private methods
+  //
 
   void _setupPrivateChannel() {
     _privateChannel = _connector!.socket.addChannel(topic: 'private');
@@ -81,6 +92,10 @@ class Kabelwerk {
       throw StateError('This Kabelwerk instance is not ready yet.');
     }
   }
+
+  //
+  // public methods
+  //
 
   /// Establishes connection to the server.
   ///
@@ -139,12 +154,6 @@ class Kabelwerk {
     _ready = false;
   }
 
-  /// Returns the connected user's info.
-  User getUser() {
-    _ensureReady();
-    return throwIfNull(_user);
-  }
-
   /// Removes one or more previously attached event listeners.
   ///
   /// Both parameters are optional: if no [reference] is given, all listeners
@@ -156,8 +165,16 @@ class Kabelwerk {
   /// Attaches an event listener.
   ///
   /// Returns a short string identifying the attached listener — which string
-  /// can be then used to remove that event listener with [Kabelwerk.off].
+  /// can be then used to remove that event listener with [off].
   String on(String event, Function function) => _dispatcher.on(event, function);
+
+  /// Attaches a one-time event listener.
+  ///
+  /// This method does the same as [on] except that the event listener will be
+  /// automatically removed after being invoked — i.e. the listener is invoked
+  /// at most once.
+  String once(String event, Function function) =>
+      _dispatcher.once(event, function);
 
   /// Initialises and returns an [Inbox] instance.
   // Inbox openInbox() {
