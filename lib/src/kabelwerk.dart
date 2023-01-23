@@ -120,22 +120,21 @@ class Kabelwerk {
 
   /// Creates a chat room between the connected user and a hub.
   ///
-  /// Returns a Future resolving into the ID of the newly created room.
-  Future<dynamic> createRoom(int hubId) {
+  /// Returns a [Future] resolving into the ID of the newly created room.
+  Future<int> createRoom(int hubId) {
     _ensureReady();
 
-    final privateChannel = throwIfNull(_privateChannel);
-    final completer = Completer();
+    final Completer<int> completer = Completer();
 
-    privateChannel.push(event: 'create_room', payload: {'hub': hubId})
-      ..receive('ok', (Map? payload) {
-        final int roomId = throwIfNull(payload)['id'];
+    _privateChannel!.push('create_room', {'hub': hubId})
+      ..onReply('ok', (PushResponse response) {
+        final int roomId = response.response['id'];
         completer.complete(roomId);
       })
-      ..receive('error', (error) {
+      ..onReply('error', (error) {
         completer.completeError(ErrorEvent());
       })
-      ..receive('timeout', (error) {
+      ..onReply('timeout', (error) {
         completer.completeError(ErrorEvent());
       });
 

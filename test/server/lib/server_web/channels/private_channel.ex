@@ -39,4 +39,16 @@ defmodule ServerWeb.PrivateChannel do
         {:reply, :error, socket}
     end
   end
+
+  def handle_in("create_room", %{"hub" => hub_id}, socket) do
+    case hub_id do
+      1 ->
+        output = %{id: 1, hub_id: 1, user_id: 1}
+
+        {:reply, {:ok, output}, socket}
+
+      _ ->
+        {:reply, :error, socket}
+    end
+  end
 end

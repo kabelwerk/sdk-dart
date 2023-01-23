@@ -258,5 +258,46 @@ void main() {
     });
   });
 
-  group('create room', () {});
+  group('create room', () {
+    late Kabelwerk kabelwerk;
+
+    setUp(() {
+      final completer = Completer();
+
+      kabelwerk = Kabelwerk();
+      kabelwerk.config.url = serverUrl;
+      kabelwerk.config.token = 'valid-token';
+
+      kabelwerk.on('ready', completer.complete);
+      kabelwerk.connect();
+
+      // return a future for async setUp
+      return completer.future;
+    });
+
+    tearDown(() {
+      kabelwerk.disconnect();
+    });
+
+    test('create room ok → future resolves', () {
+      final future = kabelwerk.createRoom(1);
+
+      future
+          .then(expectAsync1((int roomId) {
+            // see test/server/lib/server_web/channels/private_channel.ex
+            expect(roomId, equals(1));
+          }, count: 1))
+          .catchError(expectAsync1((error) {}, count: 0));
+    });
+
+    test('create room error → future rejected', () {
+      final future = kabelwerk.createRoom(2);
+
+      future
+          .then(expectAsync1((_) {}, count: 0))
+          .catchError(expectAsync1((error) {
+            expect(error.runtimeType, equals(ErrorEvent));
+          }, count: 1));
+    });
+  });
 }
