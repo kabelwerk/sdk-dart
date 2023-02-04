@@ -64,8 +64,8 @@ class Kabelwerk {
 
     _dispatcher.once('connected', (_event) {
       _privateChannel!.join()
-        ..onReply('ok', (PushResponse response) {
-          final user = User.fromPayload(response.response);
+        ..onReply('ok', (PushResponse pushResponse) {
+          final user = User.fromPayload(pushResponse.response);
 
           if (_user != null) {
             _dispatcher.send('user_updated', UserUpdated(user));
@@ -127,8 +127,8 @@ class Kabelwerk {
     final Completer<int> completer = Completer();
 
     _privateChannel!.push('create_room', {'hub': hubId})
-      ..onReply('ok', (PushResponse response) {
-        final int roomId = response.response['id'];
+      ..onReply('ok', (PushResponse pushResponse) {
+        final int roomId = pushResponse.response['id'];
         completer.complete(roomId);
       })
       ..onReply('error', (error) {
@@ -213,8 +213,8 @@ class Kabelwerk {
       'push_notifications_token': pushNotificationsToken,
       'push_notifications_enabled': pushNotificationsEnabled
     })
-      ..onReply('ok', (PushResponse response) {
-        final device = Device.fromPayload(response.response);
+      ..onReply('ok', (PushResponse pushResponse) {
+        final device = Device.fromPayload(pushResponse.response);
         completer.complete(device);
       })
       ..onReply('error', (error) {
@@ -234,8 +234,8 @@ class Kabelwerk {
     final Completer<User> completer = Completer();
 
     _privateChannel!.push('update_user', {'name': name})
-      ..onReply('ok', (PushResponse response) {
-        final user = User.fromPayload(response.response);
+      ..onReply('ok', (PushResponse pushResponse) {
+        final user = User.fromPayload(pushResponse.response);
         _user = user;
         completer.complete(user);
       })

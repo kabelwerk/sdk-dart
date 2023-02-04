@@ -4,6 +4,7 @@ defmodule ServerWeb.UserSocket do
   alias ServerWeb.Lumberjack
 
   channel "private", ServerWeb.PrivateChannel
+  channel "user_inbox:*", ServerWeb.UserInboxChannel
 
   def connect(%{"token" => token}, socket, _connect_info) do
     socket = assign(socket, :id, System.unique_integer([:positive]))

@@ -1,14 +1,19 @@
-import 'package:phoenix_wings/phoenix_wings.dart';
+import 'dart:async';
 
+import 'package:phoenix_socket/phoenix_socket.dart';
+
+import './connector.dart';
 import './dispatcher.dart';
 import './events.dart';
-import './payloads.dart';
-import './utils.dart';
+import './models.dart';
 
 /// An inbox is a view on the rooms the user has access to; it maintains a list
 /// of rooms ordered by recency of their latest message.
 class Inbox {
-  final User _user;
+  final Connector _connector;
+  final int _userId;
+
+  Inbox(this._connector, this._userId);
 
   final Dispatcher _dispatcher = Dispatcher([
     'error',
@@ -17,48 +22,49 @@ class Inbox {
   ]);
 
   final Map _items = Map();
+
+  bool _connectHasBeenCalled = false;
   bool _ready = false;
 
-  final PhoenixSocket _socket;
-  PhoenixChannel? _channel;
+  late PhoenixChannel _channel;
 
-  Inbox(this._socket, this._user);
+  //
+  // getters
+  //
+
+  //
+  // private methods
+  //
 
   void _setupChannel() {
-    _channel = _socket.channel('user_inbox:${_user.id}');
+    _channel = _connector.socket.addChannel(topic: 'user_inbox:${_userId}');
 
-    _channel?.on('inbox_updated', (Map? payload, ref, joinRef) {
-      final inboxItem = InboxItem.fromPayload(throwIfNull(payload), _user);
-
-      _items[inboxItem.room.id] = inboxItem;
-
-      _dispatcher.send('updated', InboxUpdated(listItems()));
+    _channel.messages.listen((message) {
+      if (message.event.value == 'inbox_updated') {
+        final inboxItem = InboxItem.fromPayload(message.payload!);
+        _items[inboxItem.roomId] = inboxItem;
+        _dispatcher.send('updated', InboxUpdated(listItems()));
+      }
     });
 
-    var push = _channel?.join();
-
-    push?.receive('ok', (Map? payload) {
-      _loadItemsOnJoin();
-    });
-
-    push?.receive('error', (error) {
-      _dispatcher.send('error', ErrorEvent());
-    });
-
-    push?.receive('timeout', (error) {
-      _dispatcher.send('error', ErrorEvent());
-    });
+    _channel.join()
+      ..onReply('ok', (PushResponse pushResponse) {
+        _loadItemsOnJoin();
+      })
+      ..onReply('error', (error) {
+        _dispatcher.send('error', ErrorEvent());
+      })
+      ..onReply('timeout', (error) {
+        _dispatcher.send('error', ErrorEvent());
+      });
   }
 
   void _loadItemsOnJoin() {
-    final channel = throwIfNull(_channel);
-
-    channel.push(event: 'list_rooms', payload: Map())
-      ..receive('ok', (Map? payload) {
-        final parsed = InboxItemsList.fromPayload(throwIfNull(payload), _user);
-
-        for (var inboxItem in parsed.items) {
-          _items[inboxItem.room.id] = inboxItem;
+    _channel.push('list_rooms', {})
+      ..onReply('ok', (PushResponse pushResponse) {
+        for (final item in pushResponse.response['items']) {
+          final inboxItem = InboxItem.fromPayload(item);
+          _items[inboxItem.roomId] = inboxItem;
         }
 
         if (!_ready) {
@@ -68,34 +74,35 @@ class Inbox {
           _dispatcher.send('updated', InboxUpdated(listItems()));
         }
       })
-      ..receive('error', (error) {
+      ..onReply('error', (error) {
         _dispatcher.send('error', ErrorEvent());
       })
-      ..receive('timeout', (error) {
+      ..onReply('timeout', (error) {
         _dispatcher.send('error', ErrorEvent());
       });
   }
+
+  //
+  // public methods
+  //
 
   /// Establishes connection to the server.
   ///
   /// Usually all event listeners should be already attached when this method
   /// is invoked.
   void connect() {
-    if (_channel != null) {
+    if (_connectHasBeenCalled != false) {
       throw StateError(
-          "This Inbox instance's .connect() method was already called once.");
+          "This Inbox instance's .connect() method has already been called once.");
     }
 
+    _connectHasBeenCalled = true;
     _setupChannel();
   }
 
-  /// Removes all previously attached event listeners and closes the connection
-  /// to the server.
+  /// Closes the connection to the server.
   void disconnect() {
-    _dispatcher.off();
-
-    _channel?.leave();
-    _channel = null;
+    _channel.leave();
 
     _items.clear();
     _ready = false;
@@ -129,6 +136,14 @@ class Inbox {
   /// Attaches an event listener.
   ///
   /// Returns a short string identifying the attached listener — which string
-  /// can be then used to remove that event listener with [Inbox.off()].
+  /// can be then used to remove that event listener with [off].
   String on(String event, Function function) => _dispatcher.on(event, function);
+
+  /// Attaches a one-time event listener.
+  ///
+  /// This method does the same as [on] except that the event listener will be
+  /// automatically removed after being invoked — i.e. the listener is invoked
+  /// at most once.
+  String once(String event, Function function) =>
+      _dispatcher.once(event, function);
 }
