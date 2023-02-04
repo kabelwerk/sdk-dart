@@ -7,10 +7,9 @@ import './connection_state.dart';
 import './connector.dart';
 import './dispatcher.dart';
 import './events.dart';
-// import './inbox.dart';
+import './inbox.dart';
 import './models.dart';
 // import './room.dart';
-import './utils.dart';
 
 /// A Kabelwerk instance opens and maintains a websocket connection to the
 /// Kabelwerk backend; it is also used for retrieving and updating the
@@ -176,14 +175,11 @@ class Kabelwerk {
       _dispatcher.once(event, function);
 
   /// Initialises and returns an [Inbox] instance.
-  // Inbox openInbox() {
-  //   _ensureReady();
+  Inbox openInbox() {
+    _ensureReady();
 
-  //   final socket = throwIfNull(_connector);
-  //   final user = throwIfNull(_user);
-
-  //   return Inbox(socket, user);
-  // }
+    return Inbox(_connector!, _user!.id);
+  }
 
   /// Initialises and returns a [Room] instance for the chat room with the
   /// given ID.

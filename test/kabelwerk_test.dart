@@ -174,7 +174,7 @@ void main() {
       expect(kabelwerk.user.name, equals('Test User'));
     });
 
-    test('update user ok → future resolves, user_updated event', () {
+    test('update_user ok → future resolves, user_updated event', () {
       kabelwerk.on(
           'user_updated',
           expectAsync1((UserUpdated event) {
@@ -199,7 +199,7 @@ void main() {
           .catchError(expectAsync1((error) {}, count: 0));
     });
 
-    test('update user error → future rejected', () {
+    test('update_user error → future rejected', () {
       final future = kabelwerk.updateUser(name: 'Invalid Name');
 
       future
@@ -231,7 +231,7 @@ void main() {
       kabelwerk.disconnect();
     });
 
-    test('update device ok → future resolves', () {
+    test('update_device ok → future resolves', () {
       final future = kabelwerk.updateDevice(
           pushNotificationsToken: 'valid-token',
           pushNotificationsEnabled: true);
@@ -246,7 +246,7 @@ void main() {
           .catchError(expectAsync1((error) {}, count: 0));
     });
 
-    test('update device error → future rejected', () {
+    test('update_device error → future rejected', () {
       final future = kabelwerk.updateDevice(
           pushNotificationsToken: 'bad-token', pushNotificationsEnabled: true);
 
@@ -279,7 +279,7 @@ void main() {
       kabelwerk.disconnect();
     });
 
-    test('create room ok → future resolves', () {
+    test('create_room ok → future resolves', () {
       final future = kabelwerk.createRoom(1);
 
       future
@@ -290,7 +290,7 @@ void main() {
           .catchError(expectAsync1((error) {}, count: 0));
     });
 
-    test('create room error → future rejected', () {
+    test('create_room error → future rejected', () {
       final future = kabelwerk.createRoom(2);
 
       future
@@ -298,6 +298,36 @@ void main() {
           .catchError(expectAsync1((error) {
             expect(error.runtimeType, equals(ErrorEvent));
           }, count: 1));
+    });
+  });
+
+  group('open inboxes and rooms', () {
+    late Kabelwerk kabelwerk;
+
+    setUp(() {
+      final completer = Completer();
+
+      kabelwerk = Kabelwerk();
+      kabelwerk.config.url = serverUrl;
+      kabelwerk.config.token = 'valid-token';
+
+      kabelwerk.on('ready', completer.complete);
+      kabelwerk.connect();
+
+      // return a future for async setUp
+      return completer.future;
+    });
+
+    tearDown(() {
+      kabelwerk.disconnect();
+    });
+
+    test('init and connect an inbox', () {
+      final inbox = kabelwerk.openInbox();
+
+      inbox.on('ready', expectAsync1((InboxReady event) {}, count: 1));
+
+      inbox.connect();
     });
   });
 }
