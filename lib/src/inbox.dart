@@ -32,6 +32,23 @@ class Inbox {
   // getters
   //
 
+  /// The list of inbox items already loaded by the inbox.
+  ///
+  /// The list is sorted by the rooms' latest messages (the room with the most
+  /// recent message comes first).
+  List<InboxItem> get items {
+    final list = List<InboxItem>.from(_items.values);
+
+    list.sort((InboxItem itemA, InboxItem itemB) {
+      DateTime a = itemA.message?.insertedAt ?? DateTime(0);
+      DateTime b = itemB.message?.insertedAt ?? DateTime(0);
+
+      return a.compareTo(b);
+    });
+
+    return list;
+  }
+
   //
   // private methods
   //
@@ -41,9 +58,9 @@ class Inbox {
 
     _channel.messages.listen((message) {
       if (message.event.value == 'inbox_updated') {
-        final inboxItem = InboxItem.fromPayload(message.payload!);
+        final inboxItem = InboxItem.fromPayload(message.payload!, _userId);
         _items[inboxItem.roomId] = inboxItem;
-        _dispatcher.send('updated', InboxUpdated(listItems()));
+        _dispatcher.send('updated', InboxUpdated(items));
       }
     });
 
@@ -63,15 +80,15 @@ class Inbox {
     _channel.push('list_rooms', {})
       ..onReply('ok', (PushResponse pushResponse) {
         for (final item in pushResponse.response['items']) {
-          final inboxItem = InboxItem.fromPayload(item);
+          final inboxItem = InboxItem.fromPayload(item, _userId);
           _items[inboxItem.roomId] = inboxItem;
         }
 
-        if (!_ready) {
+        if (_ready == false) {
           _ready = true;
-          _dispatcher.send('ready', InboxReady(listItems()));
+          _dispatcher.send('ready', InboxReady(items));
         } else {
-          _dispatcher.send('updated', InboxUpdated(listItems()));
+          _dispatcher.send('updated', InboxUpdated(items));
         }
       })
       ..onReply('error', (error) {
@@ -106,23 +123,6 @@ class Inbox {
 
     _items.clear();
     _ready = false;
-  }
-
-  /// Returns the list of inbox items already loaded by the inbox.
-  ///
-  /// The list is sorted by the rooms' latest messages (the room with the most
-  /// recent message comes first).
-  List<InboxItem> listItems() {
-    final list = List<InboxItem>.from(_items.values);
-
-    list.sort((InboxItem itemA, InboxItem itemB) {
-      DateTime a = itemA.message?.insertedAt ?? DateTime(0);
-      DateTime b = itemB.message?.insertedAt ?? DateTime(0);
-
-      return a.compareTo(b);
-    });
-
-    return list;
   }
 
   /// Removes one or more previously attached event listeners.

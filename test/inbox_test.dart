@@ -34,7 +34,7 @@ void main() {
     late Inbox inbox;
 
     test('join error → error event', () {
-      inbox = Inbox(connector, 2);
+      inbox = Inbox(connector, -1);
 
       inbox.on('error', expectAsync1((ErrorEvent event) {}, count: 1));
 
@@ -44,7 +44,11 @@ void main() {
     test('join ok, list_rooms ok → ready event', () {
       inbox = Inbox(connector, 1);
 
-      inbox.on('ready', expectAsync1((InboxReady event) {}, count: 1));
+      inbox.on(
+          'ready',
+          expectAsync1((InboxReady event) {
+            expect(event.items.length, equals(1));
+          }, count: 1));
 
       inbox.connect();
     });

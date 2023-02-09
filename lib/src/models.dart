@@ -9,7 +9,12 @@ class Hub {
   /// Your unique ID for this hub.
   final String slug;
 
-  Hub.fromPayload(Map data)
+  /// Creates a hub.
+  ///
+  /// The payload may be:
+  ///
+  /// - part of an inbox item payload.
+  Hub.fromPayload(Map<String, dynamic> data)
       : id = data['id'],
         name = data['name'],
         slug = data['slug'];
@@ -26,7 +31,14 @@ class User {
   /// The user's name.
   final String name;
 
-  User.fromPayload(Map data)
+  /// Creates a user.
+  ///
+  /// The payload may be:
+  ///
+  /// - an update_user response;
+  /// - a user_updated event;
+  /// - part of a message payload.
+  User.fromPayload(Map<String, dynamic> data)
       : id = data['id'],
         key = data['key'],
         name = data['name'];
@@ -44,7 +56,12 @@ class Device {
   /// Whether to send push notifications to this device.
   final bool pushNotificationsEnabled;
 
-  Device.fromPayload(Map data)
+  /// Creates a device.
+  ///
+  /// The payload may be:
+  ///
+  /// - an update_device response.
+  Device.fromPayload(Map<String, dynamic> data)
       : id = data['id'],
         pushNotificationsToken = data['push_notifications_token'],
         pushNotificationsEnabled = data['push_notifications_enabled'];
@@ -98,13 +115,22 @@ class Message {
   /// The user who posted the message.
   final User user;
 
-  Message.fromPayload(Map data)
+  /// Creates a message.
+  ///
+  /// The payload may be:
+  ///
+  /// - a post_message response;
+  /// - a message_posted event;
+  /// - a delete_message response;
+  /// - a message_deleted event;
+  /// - part of an inbox item payload.
+  Message.fromPayload(Map<String, dynamic> data)
       : html = data['html'],
         id = data['id'],
         insertedAt = DateTime.parse(data['inserted_at']),
         roomId = data['room_id'],
         text = data['text'],
-        type = data['type'],
+        type = MessageType.values.byName(data['type']),
         updatedAt = DateTime.parse(data['updated_at']),
         upload = data['upload'],
         user = User.fromPayload(data['user']);
@@ -140,7 +166,13 @@ class Marker {
   /// The ID of the user who moved the marker.
   final int userId;
 
-  Marker.fromPayload(Map data)
+  /// Creates a marker.
+  ///
+  /// The payload may be:
+  ///
+  /// - a move_marker response;
+  /// - a marker_moved event.
+  Marker.fromPayload(Map<String, dynamic> data)
       : messageId = data['message_id'],
         updatedAt = DateTime.parse(data['updated_at']),
         userId = data['user_id'];
@@ -165,9 +197,15 @@ class InboxItem {
   /// The ID of the respective room.
   final int roomId;
 
-  InboxItem.fromPayload(Map data)
-      : hub = Hub.fromPayload(data['hub']),
-        isNew = data['is_new'],
+  /// Creates an inbox item.
+  ///
+  /// The payload may be:
+  ///
+  /// - an inbox_updated event;
+  /// - an item in a list_rooms response.
+  InboxItem.fromPayload(Map<String, dynamic> data, int userId)
+      : hub = Hub.fromPayload(data['room']['hub']),
+        isNew = data['marked_by'].indexOf(userId) == -1,
         message = Message.fromPayload(data['message']),
-        roomId = data['room_id'];
+        roomId = data['room']['id'];
 }
