@@ -5,12 +5,11 @@ defmodule ServerWeb.UserInboxChannel do
 
   def join("user_inbox:" <> number, _payload, socket) do
     {number, ""} = Integer.parse(number)
-    IO.puts number
 
-    if number > 0 do
+    if number >= 0 do
       inbox_items =
-        1..number
-        |> Enum.map(fn _ -> Factory.inbox_item() end)
+        Range.new(1, number, 1)
+        |> Enum.map(fn i -> Factory.inbox_item(room_id: i) end)
 
       {:ok, assign(socket, :inbox_items, inbox_items)}
     else

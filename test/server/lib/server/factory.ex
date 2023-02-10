@@ -51,13 +51,13 @@ defmodule Server.Factory do
     }
   end
 
-  def inbox_item() do
+  def inbox_item(opts \\ []) do
     %{
       marked_by: [1, 2],
       message: message(),
       room: %{
         hub: hub(),
-        id: 1
+        id: opts[:room_id] || 1
       }
     }
   end

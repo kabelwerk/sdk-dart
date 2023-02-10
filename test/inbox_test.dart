@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:test/test.dart';
 
 import 'package:kabelwerk/src/config.dart';
@@ -5,6 +7,7 @@ import 'package:kabelwerk/src/connector.dart';
 import 'package:kabelwerk/src/dispatcher.dart';
 import 'package:kabelwerk/src/events.dart';
 import 'package:kabelwerk/src/inbox.dart';
+import 'package:kabelwerk/src/models.dart';
 
 void main() {
   late Config config;
@@ -47,10 +50,63 @@ void main() {
       inbox.on(
           'ready',
           expectAsync1((InboxReady event) {
-            expect(event.items.length, equals(1));
+            expect(inbox.items.length, equals(1));
+            expect(event.items, equals(inbox.items));
           }, count: 1));
 
       inbox.connect();
+    });
+
+    test('call connect twice → state error', () {
+      inbox = Inbox(connector, 0);
+
+      inbox.connect();
+
+      expect(() => inbox.connect(), throwsStateError);
+    });
+  });
+
+  group('load more', () {
+    Future<Inbox> setUpInbox(userId) {
+      final Completer<Inbox> completer = Completer();
+      final inbox = Inbox(connector, userId);
+
+      inbox.on('ready', (InboxReady event) {
+        completer.complete(inbox);
+      });
+
+      inbox.connect();
+
+      return completer.future;
+    }
+
+    test('0 items', () async {
+      final inbox = await setUpInbox(0);
+      expect(inbox.items.length, equals(0));
+
+      final List<InboxItem> items = await inbox.loadMore();
+      expect(inbox.items, equals(items));
+      expect(inbox.items.length, equals(0));
+    });
+
+    test('21 items', () async {
+      final inbox = await setUpInbox(21);
+      expect(inbox.items.length, equals(10));
+
+      // load the second 10 items
+      final List<InboxItem> items1 = await inbox.loadMore();
+      expect(inbox.items, equals(items1));
+      expect(inbox.items.length, equals(20));
+
+      // load the last item
+      final List<InboxItem> items2 = await inbox.loadMore();
+      expect(inbox.items, equals(items2));
+      expect(inbox.items.length, equals(21));
+
+      // no more items to load
+      final List<InboxItem> items3 = await inbox.loadMore();
+      expect(inbox.items, equals(items3));
+      expect(inbox.items.length, equals(21));
     });
   });
 }

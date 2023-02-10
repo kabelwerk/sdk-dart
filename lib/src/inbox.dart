@@ -21,7 +21,7 @@ class Inbox {
     'updated',
   ]);
 
-  final Map _items = Map();
+  final Map<int, InboxItem> _items = Map();
 
   bool _connectHasBeenCalled = false;
   bool _ready = false;
@@ -123,6 +123,31 @@ class Inbox {
 
     _items.clear();
     _ready = false;
+  }
+
+  /// Loads more inbox items.
+  ///
+  /// Returns a [Future] which resolves into the updated list of inbox items.
+  Future<List<InboxItem>> loadMore() {
+    final Completer<List<InboxItem>> completer = Completer();
+
+    _channel.push('list_rooms', {'offset': _items.length})
+      ..onReply('ok', (PushResponse pushResponse) {
+        for (final item in pushResponse.response['items']) {
+          final inboxItem = InboxItem.fromPayload(item, _userId);
+          _items[inboxItem.roomId] = inboxItem;
+        }
+
+        completer.complete(items);
+      })
+      ..onReply('error', (error) {
+        completer.completeError(ErrorEvent());
+      })
+      ..onReply('timeout', (error) {
+        completer.completeError(ErrorEvent());
+      });
+
+    return completer.future;
   }
 
   /// Removes one or more previously attached event listeners.
