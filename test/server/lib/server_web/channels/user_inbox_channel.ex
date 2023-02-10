@@ -8,8 +8,17 @@ defmodule ServerWeb.UserInboxChannel do
 
     if number >= 0 do
       inbox_items =
-        Range.new(1, number, 1)
-        |> Enum.map(fn i -> Factory.inbox_item(room_id: i) end)
+        Enum.map(
+          Range.new(1, number, 1),
+          fn i ->
+            Factory.inbox_item(
+              room_id: i,
+              message: if(rem(i, 2) != 0, do: Factory.message(), else: nil)
+            )
+          end
+        )
+
+      Process.send_after(self(), {:after_join, number}, 200)
 
       {:ok, assign(socket, :inbox_items, inbox_items)}
     else
@@ -25,5 +34,13 @@ defmodule ServerWeb.UserInboxChannel do
     output = %{items: slice}
 
     {:reply, {:ok, output}, socket}
+  end
+
+  def handle_info({:after_join, number}, socket) do
+    if number == 41 do
+      push(socket, "inbox_updated", Factory.inbox_item(room_id: 42))
+    end
+
+    {:noreply, socket}
   end
 end

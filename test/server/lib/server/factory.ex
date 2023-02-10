@@ -15,7 +15,7 @@ defmodule Server.Factory do
     %{
       id: 1,
       key: "test_user",
-      name: opts[:name] || "Test User"
+      name: Keyword.get(opts, :name, "Test User")
     }
   end
 
@@ -31,8 +31,8 @@ defmodule Server.Factory do
     %{
       id: 1,
       inserted_at: timestamp(),
-      push_notifications_token: opts[:push_notifications_token] || "valid-token",
-      push_notifications_enabled: opts[:push_notifications_enabled] || true,
+      push_notifications_token: Keyword.get(opts, :push_notifications_token, "valid-token"),
+      push_notifications_enabled: Keyword.get(opts, :push_notifications_enabled, true),
       updated_at: timestamp()
     }
   end
@@ -54,10 +54,10 @@ defmodule Server.Factory do
   def inbox_item(opts \\ []) do
     %{
       marked_by: [1, 2],
-      message: message(),
+      message: Keyword.get(opts, :message, message()),
       room: %{
         hub: hub(),
-        id: opts[:room_id] || 1
+        id: Keyword.get(opts, :room_id, 1)
       }
     }
   end

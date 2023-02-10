@@ -66,7 +66,7 @@ void main() {
     });
   });
 
-  group('load more', () {
+  group('items', () {
     Future<Inbox> setUpInbox(userId) {
       final Completer<Inbox> completer = Completer();
       final inbox = Inbox(connector, userId);
@@ -107,6 +107,26 @@ void main() {
       final List<InboxItem> items3 = await inbox.loadMore();
       expect(inbox.items, equals(items3));
       expect(inbox.items.length, equals(21));
+    });
+
+    test('41 + 1 items', () {
+      final inbox = Inbox(connector, 41);
+
+      inbox.on(
+          'ready',
+          expectAsync1((InboxReady event) {
+            expect(inbox.items, equals(event.items));
+            expect(inbox.items.length, equals(10));
+          }, count: 1));
+
+      inbox.on(
+          'updated',
+          expectAsync1((InboxUpdated event) {
+            expect(inbox.items, equals(event.items));
+            expect(inbox.items.length, equals(11));
+          }, count: 1));
+
+      inbox.connect();
     });
   });
 }

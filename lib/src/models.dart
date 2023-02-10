@@ -206,6 +206,8 @@ class InboxItem {
   InboxItem.fromPayload(Map<String, dynamic> data, int userId)
       : hub = Hub.fromPayload(data['room']['hub']),
         isNew = data['marked_by'].indexOf(userId) == -1,
-        message = Message.fromPayload(data['message']),
+        message = data['message'] == null
+            ? null
+            : Message.fromPayload(data['message']),
         roomId = data['room']['id'];
 }

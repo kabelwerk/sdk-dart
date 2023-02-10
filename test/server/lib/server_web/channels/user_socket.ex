@@ -14,7 +14,7 @@ defmodule ServerWeb.UserSocket do
         {:ok, socket}
 
       "connect-then-disconnect" ->
-        Lumberjack.disconnect_after(id(socket), 400)
+        Lumberjack.disconnect_after(id(socket), 200)
 
         {:ok, socket}
 
