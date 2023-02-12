@@ -5,6 +5,7 @@ defmodule ServerWeb.UserSocket do
 
   channel "private", ServerWeb.PrivateChannel
   channel "user_inbox:*", ServerWeb.UserInboxChannel
+  channel "room:*", ServerWeb.RoomChannel
 
   def connect(%{"token" => token}, socket, _connect_info) do
     socket = assign(socket, :id, System.unique_integer([:positive]))

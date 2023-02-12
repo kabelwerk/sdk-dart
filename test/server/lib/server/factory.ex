@@ -37,12 +37,12 @@ defmodule Server.Factory do
     }
   end
 
-  def message() do
+  def message(opts \\ []) do
     %{
       html: "<p>hello!</p>",
       id: 1,
       inserted_at: timestamp(),
-      room_id: 1,
+      room_id: Keyword.get(opts, :id, 1),
       text: "hello!",
       type: :text,
       updated_at: timestamp(),

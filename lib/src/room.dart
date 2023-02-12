@@ -1,16 +1,19 @@
 import 'dart:async';
 
-import 'package:phoenix_wings/phoenix_wings.dart';
+import 'package:phoenix_socket/phoenix_socket.dart' hide Message;
 
+import './connector.dart';
 import './dispatcher.dart';
 import './events.dart';
-import './payloads.dart';
-import './utils.dart';
+import './models.dart';
 
 /// A room is where chat messages are exchanged between an end user on one side
 /// and your care team (hub users) on the other side.
 class Room {
-  final User _user;
+  final Connector _connector;
+  final int _roomId;
+
+  Room(this._connector, this._roomId);
 
   final Dispatcher _dispatcher = Dispatcher([
     'error',
@@ -19,18 +22,27 @@ class Room {
     'message_posted',
   ]);
 
-  final int _roomId;
-  User? _roomUser;
-  Map? _roomAttributes;
+  final Map<String, dynamic> _attributes = Map();
 
   int _firstMessageId = -1;
   int _lastMessageId = -1;
+
+  bool _connectHasBeenCalled = false;
   bool _ready = false;
 
-  final PhoenixSocket _socket;
-  PhoenixChannel? _channel;
+  late PhoenixChannel _channel;
 
-  Room(this._socket, this._user, this._roomId);
+  //
+  // getters
+  //
+
+  Map<String, dynamic> get attributes {
+    return _attributes;
+  }
+
+  //
+  // private methods
+  //
 
   void _updateFirstLastIds(List<Message> messages) {
     if (messages.isNotEmpty) {
@@ -45,43 +57,46 @@ class Room {
   }
 
   void _setupChannel() {
-    _channel = _socket.channel('room:${_roomId}');
+    _channel = _connector.socket.addChannel(topic: 'room:${_roomId}');
 
-    _channel?.on('message_posted', (Map? payload, ref, joinRef) {
-      final message = Message.fromPayload(throwIfNull(payload));
+    _channel.messages.listen((socketMessage) {
+      if (socketMessage.event.value == 'message_posted') {
+        final message = Message.fromPayload(socketMessage.payload!);
 
-      if (message.id > _lastMessageId) {
-        _lastMessageId = message.id;
-      }
-
-      _dispatcher.send('message_posted', MessagePosted(message));
-    });
-
-    final push = _channel?.join();
-
-    push?.receive('ok', (Map? payload) {
-      final roomJoin = RoomJoin.fromPayload(throwIfNull(payload));
-      _roomUser = roomJoin.user;
-      _roomAttributes = roomJoin.attributes;
-      _updateFirstLastIds(roomJoin.messages);
-
-      if (_ready) {
-        for (final message in roomJoin.messages) {
-          _dispatcher.send('message_posted', MessagePosted(message));
+        if (message.id > _lastMessageId) {
+          _lastMessageId = message.id;
         }
-      } else {
-        _ready = true;
-        _dispatcher.send('ready', RoomReady(roomJoin.messages));
+
+        _dispatcher.send('message_posted', MessagePosted(message));
       }
     });
 
-    push?.receive('error', (error) {
-      _dispatcher.send('error', ErrorEvent());
-    });
+    _channel.join()
+      ..onReply('ok', (PushResponse pushResponse) {
+        // _attributes = pushResponse.response['attributes'];
 
-    push?.receive('timeout', (error) {
-      _dispatcher.send('error', ErrorEvent());
-    });
+        final List<Message> messages = [
+          for (final message in pushResponse.response['messages'])
+            Message.fromPayload(message)
+        ];
+
+        _updateFirstLastIds(messages);
+
+        if (_ready) {
+          for (final message in messages) {
+            _dispatcher.send('message_posted', MessagePosted(message));
+          }
+        } else {
+          _ready = true;
+          _dispatcher.send('ready', RoomReady(messages));
+        }
+      })
+      ..onReply('error', (error) {
+        _dispatcher.send('error', ErrorEvent());
+      })
+      ..onReply('timeout', (error) {
+        _dispatcher.send('error', ErrorEvent());
+      });
   }
 
   void _ensureReady() {
@@ -90,36 +105,32 @@ class Room {
     }
   }
 
+  //
+  // public methods
+  //
+
   /// Establishes connection to the server.
   ///
   /// Usually all event listeners should be already attached when this method
   /// is invoked.
   void connect() {
-    if (_channel != null) {
+    if (_connectHasBeenCalled != false) {
       throw StateError(
           "This Room instance's .connect() method was already called once.");
     }
 
+    _connectHasBeenCalled = true;
     _setupChannel();
   }
 
-  /// Removes all previously attached event listeners and closes the connection
-  /// to the server.
+  /// Closes the connection to the server.
   void disconnect() {
-    _dispatcher.off();
+    _channel.leave();
 
-    _channel?.leave();
-    _channel = null;
-
+    _attributes.clear();
     _firstMessageId = -1;
     _lastMessageId = -1;
     _ready = false;
-  }
-
-  /// Returns the room user's info.
-  User getUser() {
-    _ensureReady();
-    return throwIfNull(_roomUser);
   }
 
   /// Removes one or more previously attached event listeners.
@@ -133,33 +144,41 @@ class Room {
   /// Attaches an event listener.
   ///
   /// Returns a short string identifying the attached listener — which string
-  /// can be then used to remove that event listener with [Room.off()].
+  /// can be then used to remove that event listener with [off].
   String on(String event, Function function) => _dispatcher.on(event, function);
 
+  /// Attaches a one-time event listener.
+  ///
+  /// This method does the same as [on] except that the event listener will be
+  /// automatically removed after being invoked — i.e. the listener is invoked
+  /// at most once.
+  String once(String event, Function function) =>
+      _dispatcher.once(event, function);
+
   /// Posts a new message in the chat room.
-  Future<dynamic> postMessage({required String text}) {
-    _ensureReady();
+  // Future<dynamic> postMessage({required String text}) {
+  //   _ensureReady();
 
-    final channel = throwIfNull(_channel);
-    final completer = Completer();
+  //   final channel = throwIfNull(_channel);
+  //   final completer = Completer();
 
-    channel.push(event: 'post_message', payload: {'text': text})
-      ..receive('ok', (Map? payload) {
-        final message = Message.fromPayload(throwIfNull(payload));
+  //   channel.push(event: 'post_message', payload: {'text': text})
+  //     ..receive('ok', (Map? payload) {
+  //       final message = Message.fromPayload(throwIfNull(payload));
 
-        if (message.id > _lastMessageId) {
-          _lastMessageId = message.id;
-        }
+  //       if (message.id > _lastMessageId) {
+  //         _lastMessageId = message.id;
+  //       }
 
-        completer.complete(message);
-      })
-      ..receive('error', (error) {
-        completer.completeError(ErrorEvent());
-      })
-      ..receive('timeout', (error) {
-        completer.completeError(ErrorEvent());
-      });
+  //       completer.complete(message);
+  //     })
+  //     ..receive('error', (error) {
+  //       completer.completeError(ErrorEvent());
+  //     })
+  //     ..receive('timeout', (error) {
+  //       completer.completeError(ErrorEvent());
+  //     });
 
-    return completer.future;
-  }
+  //   return completer.future;
+  // }
 }
