@@ -100,7 +100,7 @@ class Room {
   }
 
   void _ensureReady() {
-    if (!_ready) {
+    if (_ready == false) {
       throw StateError('This Room instance is not ready yet.');
     }
   }
@@ -125,7 +125,9 @@ class Room {
 
   /// Closes the connection to the server.
   void disconnect() {
-    _channel.leave();
+    if (_connectHasBeenCalled == true) {
+      _channel.leave();
+    }
 
     _attributes.clear();
     _firstMessageId = -1;
@@ -172,6 +174,33 @@ class Room {
         }
 
         completer.complete(message);
+      })
+      ..onReply('error', (error) {
+        completer.completeError(ErrorEvent());
+      })
+      ..onReply('timeout', (error) {
+        completer.completeError(ErrorEvent());
+      });
+
+    return completer.future;
+  }
+
+  /// Sets the room's custom attributes.
+  ///
+  /// Returns a [Future] which resolves into the updated attributes.
+  Future<Map> updateAttributes(Map newAttributes) {
+    _ensureReady();
+
+    final Completer<Map> completer = Completer();
+
+    _channel.push('set_attributes', {'attributes': newAttributes})
+      ..onReply('ok', (PushResponse pushResponse) {
+        final attributes = pushResponse.response['attributes'];
+
+        _attributes.clear();
+        _attributes.addAll(attributes);
+
+        completer.complete(attributes);
       })
       ..onReply('error', (error) {
         completer.completeError(ErrorEvent());

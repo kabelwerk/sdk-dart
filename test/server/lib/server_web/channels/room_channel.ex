@@ -3,7 +3,7 @@ defmodule ServerWeb.RoomChannel do
 
   alias Server.Factory
 
-  def join("room:" <> room_id, %{} = payload, socket) do
+  def join("room:" <> room_id, %{} = _payload, socket) do
     {room_id, ""} = Integer.parse(room_id)
 
     if room_id >= 0 do
@@ -30,6 +30,20 @@ defmodule ServerWeb.RoomChannel do
         push(socket, "message_posted", message)
 
         {:reply, {:ok, message}, socket}
+
+      _ ->
+        {:reply, :error, socket}
+    end
+  end
+
+  def handle_in("set_attributes", %{"attributes" => attributes}, socket) do
+    case attributes do
+      %{"valid" => true} ->
+        output = %{
+          attributes: attributes
+        }
+
+        {:reply, {:ok, output}, socket}
 
       _ ->
         {:reply, :error, socket}

@@ -33,6 +33,20 @@ void main() {
     dispatcher.off();
   });
 
+  Future<Room> setUpRoom() {
+    final Completer<Room> completer = Completer();
+
+    final room = Room(connector, 0);
+
+    room.on('ready', (RoomReady event) {
+      completer.complete(room);
+    });
+
+    room.connect();
+
+    return completer.future;
+  }
+
   group('connect', () {
     late Room room;
 
@@ -68,22 +82,29 @@ void main() {
   group('post message', () {
     late Room room;
 
-    setUp(() {
-      final completer = Completer();
-
-      room = Room(connector, 0);
-      room.on('ready', completer.complete);
-      room.connect();
-
-      // return a future for async setUp
-      return completer.future;
-    });
-
     tearDown(() {
       room.disconnect();
     });
 
-    test('post_message ok → future resolves, message_posted event', () {
+    test('call postMessage too early → state error', () {
+      room = Room(connector, 0);
+
+      expect(() => room.postMessage(text: "Hello!"), throwsStateError);
+    });
+
+    test('post_message error → future rejected', () async {
+      room = await setUpRoom();
+
+      final future = room.postMessage(text: "");
+
+      future
+          .then(expectAsync1((Message message) {}, count: 0))
+          .catchError(expectAsync1((ErrorEvent error) {}, count: 1));
+    });
+
+    test('post_message ok → future resolves, message_posted event', () async {
+      room = await setUpRoom();
+
       room.on(
           'message_posted',
           expectAsync1((MessagePosted event) {
@@ -98,13 +119,45 @@ void main() {
           }, count: 1))
           .catchError(expectAsync1((ErrorEvent error) {}, count: 0));
     });
+  });
 
-    test('post_message error → future rejected', () {
-      final future = room.postMessage(text: "");
+  group('attributes', () {
+    late Room room;
+
+    tearDown(() {
+      room.disconnect();
+    });
+
+    test('call updateAttributes too early → state error', () {
+      room = Room(connector, 0);
+
+      expect(() => room.updateAttributes({'valid': true}), throwsStateError);
+    });
+
+    test('set_attributes error → future rejected', () async {
+      room = await setUpRoom();
+
+      final future = room.updateAttributes({'valid': false});
 
       future
-          .then(expectAsync1((Message message) {}, count: 0))
-          .catchError(expectAsync1((ErrorEvent error) {}, count: 1));
+          .then(expectAsync1((Map attributes) {}, count: 0))
+          .catchError(expectAsync1((ErrorEvent error) {
+            expect(room.attributes.length, equals(0));
+          }, count: 1));
+    });
+
+    test('set_attributes ok → future resolves, attributes updated', () async {
+      room = await setUpRoom();
+
+      final newAttributes = {'valid': true, 'answer': 42};
+      final future = room.updateAttributes(newAttributes);
+
+      future
+          .then(expectAsync1((Map attributes) {
+            expect(attributes, equals(newAttributes));
+            expect(room.attributes, equals(newAttributes));
+          }, count: 1))
+          .catchError(expectAsync1((ErrorEvent error) {}, count: 0));
     });
   });
 }
