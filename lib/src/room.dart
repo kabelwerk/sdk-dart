@@ -156,29 +156,30 @@ class Room {
       _dispatcher.once(event, function);
 
   /// Posts a new message in the chat room.
-  // Future<dynamic> postMessage({required String text}) {
-  //   _ensureReady();
+  ///
+  /// Returns a [Future] which resolves into the newly added [Message].
+  Future<Message> postMessage({required String text}) {
+    _ensureReady();
 
-  //   final channel = throwIfNull(_channel);
-  //   final completer = Completer();
+    final Completer<Message> completer = Completer();
 
-  //   channel.push(event: 'post_message', payload: {'text': text})
-  //     ..receive('ok', (Map? payload) {
-  //       final message = Message.fromPayload(throwIfNull(payload));
+    _channel.push('post_message', {'text': text})
+      ..onReply('ok', (PushResponse pushResponse) {
+        final message = Message.fromPayload(pushResponse.response);
 
-  //       if (message.id > _lastMessageId) {
-  //         _lastMessageId = message.id;
-  //       }
+        if (message.id > _lastMessageId) {
+          _lastMessageId = message.id;
+        }
 
-  //       completer.complete(message);
-  //     })
-  //     ..receive('error', (error) {
-  //       completer.completeError(ErrorEvent());
-  //     })
-  //     ..receive('timeout', (error) {
-  //       completer.completeError(ErrorEvent());
-  //     });
+        completer.complete(message);
+      })
+      ..onReply('error', (error) {
+        completer.completeError(ErrorEvent());
+      })
+      ..onReply('timeout', (error) {
+        completer.completeError(ErrorEvent());
+      });
 
-  //   return completer.future;
-  // }
+    return completer.future;
+  }
 }

@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:test/test.dart';
 
 import 'package:kabelwerk/src/config.dart';
 import 'package:kabelwerk/src/connector.dart';
 import 'package:kabelwerk/src/dispatcher.dart';
 import 'package:kabelwerk/src/events.dart';
+import 'package:kabelwerk/src/models.dart';
 import 'package:kabelwerk/src/room.dart';
 
 void main() {
@@ -59,6 +62,49 @@ void main() {
       room.connect();
 
       expect(() => room.connect(), throwsStateError);
+    });
+  });
+
+  group('post message', () {
+    late Room room;
+
+    setUp(() {
+      final completer = Completer();
+
+      room = Room(connector, 0);
+      room.on('ready', completer.complete);
+      room.connect();
+
+      // return a future for async setUp
+      return completer.future;
+    });
+
+    tearDown(() {
+      room.disconnect();
+    });
+
+    test('post_message ok → future resolves, message_posted event', () {
+      room.on(
+          'message_posted',
+          expectAsync1((MessagePosted event) {
+            expect(event.message.text, equals("Hello!"));
+          }, count: 1));
+
+      final future = room.postMessage(text: "Hello!");
+
+      future
+          .then(expectAsync1((Message message) {
+            expect(message.text, equals("Hello!"));
+          }, count: 1))
+          .catchError(expectAsync1((ErrorEvent error) {}, count: 0));
+    });
+
+    test('post_message error → future rejected', () {
+      final future = room.postMessage(text: "");
+
+      future
+          .then(expectAsync1((Message message) {}, count: 0))
+          .catchError(expectAsync1((ErrorEvent error) {}, count: 1));
     });
   });
 }

@@ -21,4 +21,18 @@ defmodule ServerWeb.RoomChannel do
       {:error, %{reason: "Unauthorized."}}
     end
   end
+
+  def handle_in("post_message", %{} = payload, socket) do
+    case payload do
+      %{"text" => text} when text != "" ->
+        message = Factory.message(text: text)
+
+        push(socket, "message_posted", message)
+
+        {:reply, {:ok, message}, socket}
+
+      _ ->
+        {:reply, :error, socket}
+    end
+  end
 end

@@ -43,10 +43,10 @@ defmodule Server.Factory do
       id: 1,
       inserted_at: timestamp(),
       room_id: Keyword.get(opts, :id, 1),
-      text: "hello!",
-      type: :text,
+      text: Keyword.get(opts, :text, "hello!"),
+      type: Keyword.get(opts, :type, :text),
       updated_at: timestamp(),
-      upload: nil,
+      upload: Keyword.get(opts, :upload, nil),
       user: user()
     }
   end
