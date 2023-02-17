@@ -1,3 +1,7 @@
+//
+// public models
+//
+
 /// A Kabelwerk hub.
 class Hub {
   /// The hub's unique integer ID.
@@ -210,4 +214,36 @@ class InboxItem {
             ? null
             : Message.fromPayload(data['message']),
         roomId = data['room']['id'];
+}
+
+//
+// private models
+//
+
+/// The response of a successful join of a room channel.
+class RoomJoin {
+  /// The room's custom attributes.
+  final Map<String, dynamic> attributes;
+
+  /// The room's ID.
+  final int id;
+
+  /// The room's markers.
+  final List<Marker> markers;
+
+  /// A list of the room's most recent messages (up to 100).
+  final List<Message> messages;
+
+  /// The room's end user.
+  final User user;
+
+  /// Creates a room join.
+  RoomJoin.fromPayload(Map<String, dynamic> data)
+      : attributes = data['attributes'],
+        id = data['id'],
+        markers = List.unmodifiable(
+            data['markers'].map((item) => Marker.fromPayload(item))),
+        messages = List.unmodifiable(
+            data['messages'].map((item) => Message.fromPayload(item))),
+        user = User.fromPayload(data['user']);
 }

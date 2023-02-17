@@ -13,6 +13,7 @@ void main() {
   late Config config;
   late Dispatcher dispatcher;
   late Connector connector;
+  late Room room;
 
   // set up the connector before each test
   setUp(() {
@@ -49,8 +50,6 @@ void main() {
   }
 
   group('connect', () {
-    late Room room;
-
     test('join error → error event', () {
       room = Room(connector, -1);
 
@@ -81,8 +80,6 @@ void main() {
   });
 
   group('load earlier messages', () {
-    late Room room;
-
     tearDown(() {
       room.disconnect();
     });
@@ -123,8 +120,6 @@ void main() {
   });
 
   group('post message', () {
-    late Room room;
-
     tearDown(() {
       room.disconnect();
     });
@@ -165,10 +160,14 @@ void main() {
   });
 
   group('attributes', () {
-    late Room room;
-
     tearDown(() {
       room.disconnect();
+    });
+
+    test('call attributes too early → state error', () {
+      room = Room(connector, 0);
+
+      expect(() => room.attributes, throwsStateError);
     });
 
     test('call updateAttributes too early → state error', () {
@@ -201,6 +200,27 @@ void main() {
             expect(room.attributes, equals(newAttributes));
           }, count: 1))
           .catchError(expectAsync1((ErrorEvent error) {}, count: 0));
+    });
+  });
+
+  group('user', () {
+    tearDown(() {
+      room.disconnect();
+    });
+
+    test('call user too early → state error', () {
+      room = Room(connector, 0);
+
+      expect(() => room.user, throwsStateError);
+    });
+
+    test('get room user', () async {
+      room = await setUpRoom();
+
+      // see test/server/lib/server/factory.ex
+      expect(room.user.id, equals(1));
+      expect(room.user.key, equals('test_user'));
+      expect(room.user.name, equals('Test User'));
     });
   });
 }

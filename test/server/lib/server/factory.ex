@@ -61,4 +61,14 @@ defmodule Server.Factory do
       }
     }
   end
+
+  def room_join(opts \\ []) do
+    %{
+      attributes: %{},
+      id: Keyword.get(opts, :id, 1),
+      markers: Keyword.get(opts, :markers, []),
+      messages: Keyword.get(opts, :messages, []),
+      user: user()
+    }
+  end
 end

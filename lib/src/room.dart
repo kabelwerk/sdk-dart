@@ -22,8 +22,6 @@ class Room {
     'message_posted',
   ]);
 
-  final Map<String, dynamic> _attributes = Map();
-
   int _firstMessageId = -1;
   int _lastMessageId = -1;
 
@@ -32,12 +30,23 @@ class Room {
 
   late PhoenixChannel _channel;
 
+  final Map<String, dynamic> _attributes = Map();
+  late User _user;
+
   //
   // getters
   //
 
+  /// The room's custom attributes.
   Map<String, dynamic> get attributes {
+    _ensureReady();
     return _attributes;
+  }
+
+  /// The room's end user.
+  User get user {
+    _ensureReady();
+    return _user;
   }
 
   //
@@ -73,22 +82,22 @@ class Room {
 
     _channel.join()
       ..onReply('ok', (PushResponse pushResponse) {
-        // _attributes = pushResponse.response['attributes'];
+        final roomJoin = RoomJoin.fromPayload(pushResponse.response);
 
-        final List<Message> messages = [
-          for (final message in pushResponse.response['messages'])
-            Message.fromPayload(message)
-        ];
+        _attributes.clear();
+        _attributes.addAll(roomJoin.attributes);
 
-        _updateFirstLastIds(messages);
+        _user = roomJoin.user;
+
+        _updateFirstLastIds(roomJoin.messages);
 
         if (_ready) {
-          for (final message in messages) {
+          for (final message in roomJoin.messages) {
             _dispatcher.send('message_posted', MessagePosted(message));
           }
         } else {
           _ready = true;
-          _dispatcher.send('ready', RoomReady(messages));
+          _dispatcher.send('ready', RoomReady(roomJoin.messages));
         }
       })
       ..onReply('error', (error) {

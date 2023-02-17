@@ -17,12 +17,7 @@ defmodule ServerWeb.RoomChannel do
         |> Enum.slice(0, 100)
         |> Enum.reverse()
 
-      output = %{
-        attributes: %{},
-        id: room_id,
-        messages: initial_messages,
-        user: Factory.user()
-      }
+      output = Factory.room_join(id: room_id, messages: initial_messages)
 
       {:ok, output, assign(socket, :messages, all_messages)}
     else
