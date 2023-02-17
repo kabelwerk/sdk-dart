@@ -22,16 +22,18 @@ class Room {
     'message_posted',
   ]);
 
-  int _firstMessageId = -1;
-  int _lastMessageId = -1;
-
+  late PhoenixChannel _channel;
   bool _connectHasBeenCalled = false;
   bool _ready = false;
 
-  late PhoenixChannel _channel;
-
   final Map<String, dynamic> _attributes = Map();
   late User _user;
+
+  int _firstMessageId = -1;
+  int _lastMessageId = -1;
+
+  late Marker? _ownMarker;
+  late Marker? _theirMarker;
 
   //
   // getters
@@ -41,6 +43,18 @@ class Room {
   Map<String, dynamic> get attributes {
     _ensureReady();
     return _attributes;
+  }
+
+  /// The connected user's marker — or null if this does not exist yet.
+  Marker? get ownMarker {
+    _ensureReady();
+    return _ownMarker;
+  }
+
+  /// The latest hub-side marker — or null if this does not exist yet.
+  Marker? get theirMarker {
+    _ensureReady();
+    return _theirMarker;
   }
 
   /// The room's end user.
@@ -88,6 +102,9 @@ class Room {
         _attributes.addAll(roomJoin.attributes);
 
         _user = roomJoin.user;
+
+        _ownMarker = roomJoin.ownMarker;
+        _theirMarker = roomJoin.theirMarker;
 
         _updateFirstLastIds(roomJoin.messages);
 
@@ -164,6 +181,47 @@ class Room {
         _updateFirstLastIds(messages);
 
         completer.complete(messages);
+      })
+      ..onReply('error', (error) {
+        completer.completeError(ErrorEvent());
+      })
+      ..onReply('timeout', (error) {
+        completer.completeError(ErrorEvent());
+      });
+
+    return completer.future;
+  }
+
+  /// Moves the connected user's marker in the room, creating it if it does not
+  /// exist yet.
+  ///
+  /// If provided, the optional parameter should be the ID of the [Message] to
+  /// which to move the marker; the default value is the ID of the last message
+  /// in the room that the client is aware of. Returns a [Future] which
+  /// resolves into the updated [Marker].
+  Future<Marker> moveMarker([int? messageId]) {
+    _ensureReady();
+
+    if (messageId == null) {
+      if (_lastMessageId <= 0) {
+        throw StateError(
+            'There must be at least one message in the room before moving the marker.');
+      }
+
+      messageId = _lastMessageId;
+    }
+
+    final Completer<Marker> completer = Completer();
+
+    _channel.push('move_marker', {'message': messageId})
+      ..onReply('ok', (PushResponse pushResponse) {
+        final marker = Marker.fromPayload(pushResponse.response);
+
+        if (_ownMarker == null || _ownMarker!.messageId < marker.messageId) {
+          _ownMarker = marker;
+        }
+
+        completer.complete(marker);
       })
       ..onReply('error', (error) {
         completer.completeError(ErrorEvent());

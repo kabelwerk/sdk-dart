@@ -228,11 +228,14 @@ class RoomJoin {
   /// The room's ID.
   final int id;
 
-  /// The room's markers.
-  final List<Marker> markers;
-
   /// A list of the room's most recent messages (up to 100).
   final List<Message> messages;
+
+  /// The connected user's marker in the room.
+  final Marker? ownMarker;
+
+  /// The latest hub-side marker in the room.
+  final Marker? theirMarker;
 
   /// The room's end user.
   final User user;
@@ -241,9 +244,13 @@ class RoomJoin {
   RoomJoin.fromPayload(Map<String, dynamic> data)
       : attributes = data['attributes'],
         id = data['id'],
-        markers = List.unmodifiable(
-            data['markers'].map((item) => Marker.fromPayload(item))),
         messages = List.unmodifiable(
             data['messages'].map((item) => Message.fromPayload(item))),
+        ownMarker = data['markers'][0] == null
+            ? null
+            : Marker.fromPayload(data['markers'][0]),
+        theirMarker = data['markers'][1] == null
+            ? null
+            : Marker.fromPayload(data['markers'][1]),
         user = User.fromPayload(data['user']);
 }

@@ -51,6 +51,15 @@ defmodule Server.Factory do
     }
   end
 
+  def marker(opts \\ []) do
+    %{
+      message_id: Keyword.get(opts, :message_id, 1),
+      room_id: Keyword.get(opts, :room_id, 1),
+      updated_at: timestamp(),
+      user_id: Keyword.get(opts, :user_id, 1)
+    }
+  end
+
   def inbox_item(opts \\ []) do
     %{
       marked_by: [1, 2],
@@ -66,7 +75,7 @@ defmodule Server.Factory do
     %{
       attributes: %{},
       id: Keyword.get(opts, :id, 1),
-      markers: Keyword.get(opts, :markers, []),
+      markers: Keyword.get(opts, :markers, [nil, nil]),
       messages: Keyword.get(opts, :messages, []),
       user: user()
     }

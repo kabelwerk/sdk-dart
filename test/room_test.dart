@@ -159,6 +159,56 @@ void main() {
     });
   });
 
+  group('move marker', () {
+    tearDown(() {
+      room.disconnect();
+    });
+
+    test('call moveMarker too early → state error', () {
+      room = Room(connector, 0);
+
+      expect(() => room.moveMarker(), throwsStateError);
+    });
+
+    test('call moveMarker in a room without messages → state error', () async {
+      room = await setUpRoom(roomId: 0);
+
+      expect(() => room.moveMarker(), throwsStateError);
+    });
+
+    test('move_marker error → future rejected', () async {
+      room = await setUpRoom(roomId: 1);
+
+      // see test/server/lib/server_web/channels/room_channel.ex
+      // non-positive message IDs result in errors
+      final future = room.moveMarker(-1);
+
+      future
+          .then(expectAsync1((Marker marker) {}, count: 0))
+          .catchError(expectAsync1((ErrorEvent error) {}, count: 1));
+    });
+
+    test('move_marker ok → future resolves, marker_moved event', () async {
+      room = await setUpRoom(roomId: 1);
+
+      // room.on(
+      //     'marker_moved',
+      //     expectAsync1((MarkerMoved event) {
+      //       expect(event.marker, equals(room.ownMarker));
+      //     }, count: 1));
+
+      final future = room.moveMarker();
+
+      future
+          .then(expectAsync1((Marker marker) {
+            expect(marker.messageId, equals(1));
+
+            expect(room.ownMarker, equals(marker));
+          }, count: 1))
+          .catchError(expectAsync1((ErrorEvent error) {}, count: 0));
+    });
+  });
+
   group('attributes', () {
     tearDown(() {
       room.disconnect();

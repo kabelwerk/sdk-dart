@@ -17,9 +17,14 @@ defmodule ServerWeb.RoomChannel do
         |> Enum.slice(0, 100)
         |> Enum.reverse()
 
+      socket =
+        socket
+        |> assign(:room_id, room_id)
+        |> assign(:messages, all_messages)
+
       output = Factory.room_join(id: room_id, messages: initial_messages)
 
-      {:ok, output, assign(socket, :messages, all_messages)}
+      {:ok, output, socket}
     else
       {:error, %{reason: "Unauthorized."}}
     end
@@ -38,6 +43,18 @@ defmodule ServerWeb.RoomChannel do
     }
 
     {:reply, {:ok, output}, socket}
+  end
+
+  def handle_in("move_marker", %{"message" => message_id}, socket) when is_integer(message_id) do
+    cond do
+      message_id > 0 ->
+        marker = Factory.marker(room_id: socket.assigns.room_id, message_id: message_id)
+
+        {:reply, {:ok, marker}, socket}
+
+      true ->
+        {:reply, :error, socket}
+    end
   end
 
   def handle_in("post_message", %{} = payload, socket) do
