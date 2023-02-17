@@ -49,7 +49,7 @@ void main() {
 
       inbox.on(
           'ready',
-          expectAsync1((InboxReady event) {
+          expectAsync1((InboxReadyEvent event) {
             expect(inbox.items.length, equals(1));
             expect(event.items, equals(inbox.items));
           }, count: 1));
@@ -71,7 +71,7 @@ void main() {
       final Completer<Inbox> completer = Completer();
       final inbox = Inbox(connector, userId);
 
-      inbox.on('ready', (InboxReady event) {
+      inbox.on('ready', (InboxReadyEvent event) {
         completer.complete(inbox);
       });
 
@@ -114,14 +114,14 @@ void main() {
 
       inbox.on(
           'ready',
-          expectAsync1((InboxReady event) {
+          expectAsync1((InboxReadyEvent event) {
             expect(inbox.items, equals(event.items));
             expect(inbox.items.length, equals(10));
           }, count: 1));
 
       inbox.on(
           'updated',
-          expectAsync1((InboxUpdated event) {
+          expectAsync1((InboxUpdatedEvent event) {
             expect(inbox.items, equals(event.items));
             expect(inbox.items.length, equals(11));
           }, count: 1));

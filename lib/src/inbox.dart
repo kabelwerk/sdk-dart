@@ -60,7 +60,7 @@ class Inbox {
       if (message.event.value == 'inbox_updated') {
         final inboxItem = InboxItem.fromPayload(message.payload!, _userId);
         _items[inboxItem.roomId] = inboxItem;
-        _dispatcher.send('updated', InboxUpdated(items));
+        _dispatcher.send('updated', InboxUpdatedEvent(items));
       }
     });
 
@@ -86,9 +86,9 @@ class Inbox {
 
         if (_ready == false) {
           _ready = true;
-          _dispatcher.send('ready', InboxReady(items));
+          _dispatcher.send('ready', InboxReadyEvent(items));
         } else {
-          _dispatcher.send('updated', InboxUpdated(items));
+          _dispatcher.send('updated', InboxUpdatedEvent(items));
         }
       })
       ..onReply('error', (error) {

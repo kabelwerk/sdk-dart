@@ -37,13 +37,13 @@ class Kabelwerk {
   //
 
   /// The current connection state.
-  get state =>
+  ConnectionState get state =>
       (_connector != null) ? _connector!.state : ConnectionState.inactive;
 
   /// The connected user.
-  get user {
+  User get user {
     _ensureReady();
-    return _user;
+    return _user!;
   }
 
   //
@@ -57,7 +57,7 @@ class Kabelwerk {
       if (message.event.value == 'user_updated') {
         final user = User.fromPayload(message.payload!);
         _user = user;
-        _dispatcher.send('user_updated', UserUpdated(user));
+        _dispatcher.send('user_updated', UserUpdatedEvent(user));
       }
     });
 
@@ -67,14 +67,14 @@ class Kabelwerk {
           final user = User.fromPayload(pushResponse.response);
 
           if (_user != null) {
-            _dispatcher.send('user_updated', UserUpdated(user));
+            _dispatcher.send('user_updated', UserUpdatedEvent(user));
           }
 
           _user = user;
 
           if (_ready == false) {
             _ready = true;
-            _dispatcher.send('ready', KabelwerkReady());
+            _dispatcher.send('ready', KabelwerkReadyEvent(user));
           }
         })
         ..onReply('error', (error) {

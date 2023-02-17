@@ -90,7 +90,7 @@ class Room {
           _lastMessageId = message.id;
         }
 
-        _dispatcher.send('message_posted', MessagePosted(message));
+        _dispatcher.send('message_posted', MessagePostedEvent(message));
       }
     });
 
@@ -110,11 +110,15 @@ class Room {
 
         if (_ready) {
           for (final message in roomJoin.messages) {
-            _dispatcher.send('message_posted', MessagePosted(message));
+            _dispatcher.send('message_posted', MessagePostedEvent(message));
           }
         } else {
           _ready = true;
-          _dispatcher.send('ready', RoomReady(roomJoin.messages));
+
+          _dispatcher.send(
+              'ready',
+              RoomReadyEvent(
+                  roomJoin.messages, roomJoin.ownMarker, roomJoin.theirMarker));
         }
       })
       ..onReply('error', (error) {

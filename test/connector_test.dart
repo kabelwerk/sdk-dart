@@ -67,9 +67,8 @@ void main() {
 
       dispatcher.on(
           'connected',
-          expectAsync1((event) {
-            expect(event.runtimeType, equals(Connected));
-
+          expectAsync1((ConnectedEvent event) {
+            expect(event.connectionState, equals(ConnectionState.online));
             expect(connector.state, equals(ConnectionState.online));
           }, count: 1));
 
@@ -82,7 +81,8 @@ void main() {
 
       dispatcher.on(
           'disconnected',
-          expectAsync1((Disconnected event) {
+          expectAsync1((DisconnectedEvent event) {
+            expect(event.connectionState, equals(ConnectionState.connecting));
             expect(connector.state, equals(ConnectionState.connecting));
           }, count: 1));
 
@@ -97,9 +97,8 @@ void main() {
 
       dispatcher.on(
           'disconnected',
-          expectAsync1((event) {
-            expect(event.runtimeType, equals(Disconnected));
-
+          expectAsync1((DisconnectedEvent event) {
+            expect(event.connectionState, equals(ConnectionState.inactive));
             expect(connector.state, equals(ConnectionState.inactive));
           }, count: 1));
 
@@ -166,9 +165,8 @@ void main() {
 
       dispatcher.on(
           'connected',
-          expectAsync1((event) {
-            expect(event.runtimeType, equals(Connected));
-
+          expectAsync1((ConnectedEvent event) {
+            expect(event.connectionState, equals(ConnectionState.online));
             expect(connector.state, equals(ConnectionState.online));
           }, count: 1));
 
@@ -186,7 +184,8 @@ void main() {
 
       dispatcher.on(
           'disconnected',
-          expectAsync1((Disconnected event) {
+          expectAsync1((DisconnectedEvent event) {
+            expect(event.connectionState, equals(ConnectionState.connecting));
             expect(connector.state, equals(ConnectionState.connecting));
           }, count: 1));
 
@@ -202,9 +201,8 @@ void main() {
 
       dispatcher.on(
           'disconnected',
-          expectAsync1((event) {
-            expect(event.runtimeType, equals(Disconnected));
-
+          expectAsync1((DisconnectedEvent event) {
+            expect(event.connectionState, equals(ConnectionState.inactive));
             expect(connector.state, equals(ConnectionState.inactive));
           }, count: 1));
 
@@ -259,9 +257,8 @@ void main() {
 
       dispatcher.on(
           'connected',
-          expectAsync1((event) {
-            expect(event.runtimeType, equals(Connected));
-
+          expectAsync1((ConnectedEvent event) {
+            expect(event.connectionState, equals(ConnectionState.online));
             expect(connector.state, equals(ConnectionState.online));
           }, count: 1));
 
@@ -286,9 +283,8 @@ void main() {
       // connect with valid-token → connected event
       dispatcher.on(
           'connected',
-          expectAsync1((event) {
-            expect(event.runtimeType, equals(Connected));
-
+          expectAsync1((ConnectedEvent event) {
+            expect(event.connectionState, equals(ConnectionState.online));
             expect(connector.state, equals(ConnectionState.online));
 
             connector.disconnect();
@@ -307,7 +303,8 @@ void main() {
 
       dispatcher.on(
           'disconnected',
-          expectAsync1((Disconnected event) {
+          expectAsync1((DisconnectedEvent event) {
+            expect(event.connectionState, equals(ConnectionState.connecting));
             expect(connector.state, equals(ConnectionState.connecting));
           }, count: 1));
 
@@ -324,9 +321,8 @@ void main() {
 
       dispatcher.on(
           'disconnected',
-          expectAsync1((event) {
-            expect(event.runtimeType, equals(Disconnected));
-
+          expectAsync1((DisconnectedEvent event) {
+            expect(event.connectionState, equals(ConnectionState.inactive));
             expect(connector.state, equals(ConnectionState.inactive));
           }, count: 1));
 

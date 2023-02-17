@@ -50,7 +50,8 @@ void main() {
 
       kabelwerk.on(
           'connected',
-          expectAsync1((Connected event) {
+          expectAsync1((ConnectedEvent event) {
+            expect(event.connectionState, equals(ConnectionState.online));
             expect(kabelwerk.state, equals(ConnectionState.online));
           }, count: 1));
 
@@ -70,7 +71,7 @@ void main() {
     //   kabelwerk.on(
     //       'disconnected',
     //       expectAsync1((event) {
-    //         expect(event.runtimeType, equals(Disconnected));
+    //         expect(event.runtimeType, equals(DisconnectedEvent));
 
     //         expect(kabelwerk.state, equals(ConnectionState.inactive));
     //       }, count: 1));
@@ -83,7 +84,7 @@ void main() {
 
       kabelwerk.on(
           'ready',
-          expectAsync1((KabelwerkReady event) {
+          expectAsync1((KabelwerkReadyEvent event) {
             expect(kabelwerk.state, equals(ConnectionState.online));
           }, count: 1));
 
@@ -95,7 +96,8 @@ void main() {
 
       kabelwerk.on(
           'disconnected',
-          expectAsync1((Disconnected event) {
+          expectAsync1((DisconnectedEvent event) {
+            expect(event.connectionState, equals(ConnectionState.connecting));
             expect(kabelwerk.state, equals(ConnectionState.connecting));
           }, count: 1));
 
@@ -109,7 +111,7 @@ void main() {
 
       kabelwerk.on(
           'ready',
-          expectAsync1((KabelwerkReady event) {
+          expectAsync1((KabelwerkReadyEvent event) {
             expect(kabelwerk.state, equals(ConnectionState.online));
           }, count: 1));
 
@@ -123,7 +125,8 @@ void main() {
 
       kabelwerk.on(
           'connected',
-          expectAsync1((Connected event) {
+          expectAsync1((ConnectedEvent event) {
+            expect(event.connectionState, equals(ConnectionState.online));
             expect(kabelwerk.state, equals(ConnectionState.online));
           }, count: 2));
 
@@ -135,7 +138,8 @@ void main() {
 
       kabelwerk.on(
           'disconnected',
-          expectAsync1((Disconnected event) {
+          expectAsync1((DisconnectedEvent event) {
+            expect(event.connectionState, equals(ConnectionState.inactive));
             expect(kabelwerk.state, equals(ConnectionState.inactive));
           }, count: 1));
 
@@ -177,7 +181,7 @@ void main() {
     test('update_user ok → future resolves, user_updated event', () {
       kabelwerk.on(
           'user_updated',
-          expectAsync1((UserUpdated event) {
+          expectAsync1((UserUpdatedEvent event) {
             expect(event.user.runtimeType, equals(User));
             expect(event.user.id, equals(1));
             expect(event.user.key, equals('test_user'));
@@ -325,7 +329,7 @@ void main() {
     test('init and connect an inbox', () {
       final inbox = kabelwerk.openInbox();
 
-      inbox.on('ready', expectAsync1((InboxReady event) {}, count: 1));
+      inbox.on('ready', expectAsync1((InboxReadyEvent event) {}, count: 1));
 
       inbox.connect();
     });

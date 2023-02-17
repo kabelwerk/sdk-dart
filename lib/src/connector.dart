@@ -31,7 +31,7 @@ class Connector {
 
     socket.openStream.listen((PhoenixSocketOpenEvent event) {
       state = ConnectionState.online;
-      _dispatcher.send('connected', Connected());
+      _dispatcher.send('connected', ConnectedEvent(state));
     });
 
     socket.closeStream.listen((PhoenixSocketCloseEvent event) {
@@ -39,7 +39,7 @@ class Connector {
         state = ConnectionState.connecting;
       }
 
-      _dispatcher.send('disconnected', Disconnected());
+      _dispatcher.send('disconnected', DisconnectedEvent(state));
 
       if (state == ConnectionState.connecting &&
           _config.refreshToken != null &&

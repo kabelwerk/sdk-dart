@@ -40,7 +40,7 @@ void main() {
 
     final room = Room(connector, roomId);
 
-    room.on('ready', (RoomReady event) {
+    room.on('ready', (RoomReadyEvent event) {
       completer.complete(room);
     });
 
@@ -63,8 +63,10 @@ void main() {
 
       room.on(
           'ready',
-          expectAsync1((RoomReady event) {
+          expectAsync1((RoomReadyEvent event) {
             expect(event.messages.length, equals(1));
+            expect(event.ownMarker, equals(null));
+            expect(event.theirMarker, equals(null));
           }, count: 1));
 
       room.connect();
@@ -145,7 +147,7 @@ void main() {
 
       room.on(
           'message_posted',
-          expectAsync1((MessagePosted event) {
+          expectAsync1((MessagePostedEvent event) {
             expect(event.message.text, equals("Hello!"));
           }, count: 1));
 
