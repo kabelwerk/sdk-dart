@@ -135,6 +135,37 @@ class Room {
     _ready = false;
   }
 
+  /// Loads more messages from earlier in the chat history.
+  ///
+  /// A [Room] instance keeps track of the earliest message it has processed,
+  /// so this method would usually just work when loading a chat room's
+  /// history. Returns a [Future] which resolves into a list of messages.
+  Future<List<Message>> loadEarlier() {
+    _ensureReady();
+
+    final Completer<List<Message>> completer = Completer();
+
+    _channel.push('list_messages', {'before': _firstMessageId})
+      ..onReply('ok', (PushResponse pushResponse) {
+        final List<Message> messages = [
+          for (final message in pushResponse.response['messages'])
+            Message.fromPayload(message)
+        ];
+
+        _updateFirstLastIds(messages);
+
+        completer.complete(messages);
+      })
+      ..onReply('error', (error) {
+        completer.completeError(ErrorEvent());
+      })
+      ..onReply('timeout', (error) {
+        completer.completeError(ErrorEvent());
+      });
+
+    return completer.future;
+  }
+
   /// Removes one or more previously attached event listeners.
   ///
   /// Both parameters are optional: if no [reference] is given, all listeners

@@ -40,9 +40,9 @@ defmodule Server.Factory do
   def message(opts \\ []) do
     %{
       html: "<p>hello!</p>",
-      id: 1,
+      id: Keyword.get(opts, :id, 1),
       inserted_at: timestamp(),
-      room_id: Keyword.get(opts, :id, 1),
+      room_id: Keyword.get(opts, :room_id, 1),
       text: Keyword.get(opts, :text, "hello!"),
       type: Keyword.get(opts, :type, :text),
       updated_at: timestamp(),

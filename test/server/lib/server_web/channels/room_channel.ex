@@ -7,19 +7,42 @@ defmodule ServerWeb.RoomChannel do
     {room_id, ""} = Integer.parse(room_id)
 
     if room_id >= 0 do
-      messages = Enum.map(Range.new(1, room_id, 1), fn i -> Factory.message(id: i) end)
+      all_messages =
+        Range.new(1, room_id, 1)
+        |> Enum.map(fn i -> Factory.message(room_id: room_id, id: i) end)
+
+      initial_messages =
+        all_messages
+        |> Enum.reverse()
+        |> Enum.slice(0, 100)
+        |> Enum.reverse()
 
       output = %{
         attributes: %{},
         id: room_id,
-        messages: messages,
+        messages: initial_messages,
         user: Factory.user()
       }
 
-      {:ok, output, socket}
+      {:ok, output, assign(socket, :messages, all_messages)}
     else
       {:error, %{reason: "Unauthorized."}}
     end
+  end
+
+  def handle_in("list_messages", %{"before" => before}, socket) when is_integer(before) do
+    messages =
+      socket.assigns.messages
+      |> Enum.take_while(fn message -> message.id < before end)
+      |> Enum.reverse()
+      |> Enum.slice(0, 100)
+      |> Enum.reverse()
+
+    output = %{
+      messages: messages
+    }
+
+    {:reply, {:ok, output}, socket}
   end
 
   def handle_in("post_message", %{} = payload, socket) do

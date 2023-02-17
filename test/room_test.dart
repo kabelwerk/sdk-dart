@@ -14,6 +14,7 @@ void main() {
   late Dispatcher dispatcher;
   late Connector connector;
 
+  // set up the connector before each test
   setUp(() {
     config = Config();
     config.url = 'ws://localhost:4000/socket/user/websocket';
@@ -33,10 +34,10 @@ void main() {
     dispatcher.off();
   });
 
-  Future<Room> setUpRoom() {
+  Future<Room> setUpRoom({int roomId = 0}) {
     final Completer<Room> completer = Completer();
 
-    final room = Room(connector, 0);
+    final room = Room(connector, roomId);
 
     room.on('ready', (RoomReady event) {
       completer.complete(room);
@@ -76,6 +77,48 @@ void main() {
       room.connect();
 
       expect(() => room.connect(), throwsStateError);
+    });
+  });
+
+  group('load earlier messages', () {
+    late Room room;
+
+    tearDown(() {
+      room.disconnect();
+    });
+
+    test('call loadEarlier too early → state error', () {
+      room = Room(connector, 0);
+
+      expect(() => room.loadEarlier(), throwsStateError);
+    });
+
+    test('0 messages', () async {
+      room = await setUpRoom(roomId: 0);
+
+      // no more messages to load
+      final List<Message> messages = await room.loadEarlier();
+      expect(messages.length, equals(0));
+    });
+
+    test('201 messages', () async {
+      room = await setUpRoom(roomId: 201);
+
+      // load messages 101-200
+      final List<Message> messages1 = await room.loadEarlier();
+      expect(messages1.length, equals(100));
+      expect(messages1[0].id, equals(2));
+      expect(messages1[99].id, equals(101));
+
+      // load the 201st message
+      // it is the earliest message, so its id will be 1
+      final List<Message> messages2 = await room.loadEarlier();
+      expect(messages2.length, equals(1));
+      expect(messages2[0].id, equals(1));
+
+      // no more messages to load
+      final List<Message> messages3 = await room.loadEarlier();
+      expect(messages3.length, equals(0));
     });
   });
 
