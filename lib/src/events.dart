@@ -118,3 +118,15 @@ class MessagePostedEvent extends Event {
 
   MessagePostedEvent(this.message);
 }
+
+/// A [Room] event fired when a marker in the room is updated or created (by
+/// any user).
+///
+/// If the websocket connection drops, fired upon reconnecting for each marker
+/// moved while the websocket was disconnected.
+class MarkerMovedEvent extends Event {
+  /// The updated marker.
+  final Marker marker;
+
+  MarkerMovedEvent(this.marker);
+}

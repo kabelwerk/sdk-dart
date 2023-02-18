@@ -18,8 +18,8 @@ class Room {
   final Dispatcher _dispatcher = Dispatcher([
     'error',
     'ready',
-    'marked_moved',
     'message_posted',
+    'marker_moved',
   ]);
 
   late PhoenixChannel _channel;
@@ -92,6 +92,19 @@ class Room {
 
         _dispatcher.send('message_posted', MessagePostedEvent(message));
       }
+
+      if (socketMessage.event.value == 'marker_moved') {
+        final marker = Marker.fromPayload(socketMessage.payload!);
+
+        if (marker.userId == _user.id) {
+          _ownMarker = marker;
+          _dispatcher.send('marker_moved', MarkerMovedEvent(marker));
+        } else if (_theirMarker == null ||
+            _theirMarker!.messageId < marker.messageId) {
+          _theirMarker = marker;
+          _dispatcher.send('marker_moved', MarkerMovedEvent(marker));
+        }
+      }
     });
 
     _channel.join()
@@ -103,22 +116,42 @@ class Room {
 
         _user = roomJoin.user;
 
-        _ownMarker = roomJoin.ownMarker;
-        _theirMarker = roomJoin.theirMarker;
-
         _updateFirstLastIds(roomJoin.messages);
 
-        if (_ready) {
-          for (final message in roomJoin.messages) {
-            _dispatcher.send('message_posted', MessagePostedEvent(message));
-          }
-        } else {
+        if (_ready == false) {
+          // first channel join
+
           _ready = true;
+
+          _ownMarker = roomJoin.ownMarker;
+          _theirMarker = roomJoin.theirMarker;
 
           _dispatcher.send(
               'ready',
               RoomReadyEvent(
                   roomJoin.messages, roomJoin.ownMarker, roomJoin.theirMarker));
+        } else {
+          // the channel was re-joined
+
+          for (final message in roomJoin.messages) {
+            _dispatcher.send('message_posted', MessagePostedEvent(message));
+          }
+
+          if (roomJoin.ownMarker != null &&
+              (_ownMarker == null ||
+                  _ownMarker!.messageId < roomJoin.ownMarker!.messageId)) {
+            _ownMarker = roomJoin.ownMarker;
+            _dispatcher.send(
+                'marker_moved', MarkerMovedEvent(roomJoin.ownMarker!));
+          }
+
+          if (roomJoin.theirMarker != null &&
+              (_theirMarker == null ||
+                  _theirMarker!.messageId < roomJoin.theirMarker!.messageId)) {
+            _theirMarker = roomJoin.theirMarker;
+            _dispatcher.send(
+                'marker_moved', MarkerMovedEvent(roomJoin.theirMarker!));
+          }
         }
       })
       ..onReply('error', (error) {

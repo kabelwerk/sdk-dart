@@ -50,6 +50,8 @@ defmodule ServerWeb.RoomChannel do
       message_id > 0 ->
         marker = Factory.marker(room_id: socket.assigns.room_id, message_id: message_id)
 
+        push(socket, "marker_moved", marker)
+
         {:reply, {:ok, marker}, socket}
 
       true ->

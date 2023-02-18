@@ -193,19 +193,21 @@ void main() {
     test('move_marker ok → future resolves, marker_moved event', () async {
       room = await setUpRoom(roomId: 1);
 
-      // room.on(
-      //     'marker_moved',
-      //     expectAsync1((MarkerMoved event) {
-      //       expect(event.marker, equals(room.ownMarker));
-      //     }, count: 1));
+      room.on(
+          'marker_moved',
+          expectAsync1((MarkerMovedEvent event) {
+            expect(event.marker, equals(room.ownMarker));
+          }, count: 1));
 
+      // move the marker to the latest message in the room
+      // as the room only has one message, the latter will have ID 1
       final future = room.moveMarker();
 
       future
           .then(expectAsync1((Marker marker) {
             expect(marker.messageId, equals(1));
 
-            expect(room.ownMarker, equals(marker));
+            // expect(room.ownMarker, equals(marker));
           }, count: 1))
           .catchError(expectAsync1((ErrorEvent error) {}, count: 0));
     });
