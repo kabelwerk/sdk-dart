@@ -333,5 +333,30 @@ void main() {
 
       inbox.connect();
     });
+
+    test('init and connect a room', () {
+      final room = kabelwerk.openRoom(18);
+
+      room.on(
+          'ready',
+          expectAsync1((RoomReadyEvent event) {
+            expect(event.messages.length, equals(18));
+          }, count: 1));
+
+      room.connect();
+    });
+
+    test('init and connect a room, without an id', () {
+      final room = kabelwerk.openRoom();
+
+      room.on(
+          'ready',
+          expectAsync1((RoomReadyEvent event) {
+            // room id 0 opens an arbitrary room on the real backend
+            expect(event.messages.length, equals(0));
+          }, count: 1));
+
+      room.connect();
+    });
   });
 }

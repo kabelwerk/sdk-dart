@@ -9,7 +9,7 @@ import './dispatcher.dart';
 import './events.dart';
 import './inbox.dart';
 import './models.dart';
-// import './room.dart';
+import './room.dart';
 
 /// A Kabelwerk instance opens and maintains a websocket connection to the
 /// Kabelwerk backend; it is also used for retrieving and updating the
@@ -183,14 +183,15 @@ class Kabelwerk {
 
   /// Initialises and returns a [Room] instance for the chat room with the
   /// given ID.
-  // Room openRoom(int roomId) {
-  //   _ensureReady();
+  ///
+  /// Alternatively, the method can be called without a parameter, in which
+  /// case one of the rooms belonging to the connected user will be opened —
+  /// useful when you have a single hub.
+  Room openRoom([int roomId = 0]) {
+    _ensureReady();
 
-  //   final socket = throwIfNull(_connector);
-  //   final user = throwIfNull(_user);
-
-  //   return Room(socket, user, roomId);
-  // }
+    return Room(_connector!, roomId);
+  }
 
   /// Sets and/or updates the push notifications settings for the currently
   /// connected device.
