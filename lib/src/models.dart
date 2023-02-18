@@ -1,9 +1,11 @@
+import 'package:equatable/equatable.dart';
+
 //
 // public models
 //
 
 /// A Kabelwerk hub.
-class Hub {
+class Hub extends Equatable {
   /// The hub's unique integer ID.
   final int id;
 
@@ -17,15 +19,18 @@ class Hub {
   ///
   /// The payload may be:
   ///
-  /// - part of an inbox item payload.
+  /// - part of an [InboxItem] payload.
   Hub.fromPayload(Map<String, dynamic> data)
       : id = data['id'],
         name = data['name'],
         slug = data['slug'];
+
+  @override
+  List<Object> get props => [id, name, slug];
 }
 
 /// A Kabelwerk user.
-class User {
+class User extends Equatable {
   /// The user's unique integer ID.
   final int id;
 
@@ -39,17 +44,20 @@ class User {
   ///
   /// The payload may be:
   ///
-  /// - an update_user response;
-  /// - a user_updated event;
-  /// - part of a message payload.
+  /// - an `update_user` response;
+  /// - a `user_updated` event;
+  /// - part of a [Message] payload.
   User.fromPayload(Map<String, dynamic> data)
       : id = data['id'],
         key = data['key'],
         name = data['name'];
+
+  @override
+  List<Object> get props => [id, key, name];
 }
 
 /// The currently connected device.
-class Device {
+class Device extends Equatable {
   /// The device's unique integer ID.
   final int id;
 
@@ -64,11 +72,15 @@ class Device {
   ///
   /// The payload may be:
   ///
-  /// - an update_device response.
+  /// - an `update_device` response.
   Device.fromPayload(Map<String, dynamic> data)
       : id = data['id'],
         pushNotificationsToken = data['push_notifications_token'],
         pushNotificationsEnabled = data['push_notifications_enabled'];
+
+  @override
+  List<Object> get props =>
+      [id, pushNotificationsToken, pushNotificationsEnabled];
 }
 
 /// The possible chat message types.
@@ -79,7 +91,7 @@ enum MessageType {
 }
 
 /// A chat message.
-class Message {
+class Message extends Equatable {
   /// The content of the message in HTML format.
   ///
   /// This is wrapped in `<p>` tags, with newlines within paragraphs converted
@@ -123,11 +135,11 @@ class Message {
   ///
   /// The payload may be:
   ///
-  /// - a post_message response;
-  /// - a message_posted event;
-  /// - a delete_message response;
-  /// - a message_deleted event;
-  /// - part of an inbox item payload.
+  /// - a `post_message` response;
+  /// - a `message_posted` event;
+  /// - a `delete_message` response;
+  /// - a `message_deleted` event;
+  /// - part of an [InboxItem] payload.
   Message.fromPayload(Map<String, dynamic> data)
       : html = data['html'],
         id = data['id'],
@@ -138,10 +150,17 @@ class Message {
         updatedAt = DateTime.parse(data['updated_at']),
         upload = data['upload'],
         user = User.fromPayload(data['user']);
+
+  @override
+  List<Object?> get props =>
+      [html, id, insertedAt, roomId, text, type, updatedAt, upload, user];
 }
 
 /// An upload.
-class Upload {}
+class Upload extends Equatable {
+  @override
+  List<Object?> get props => [];
+}
 
 /// A marker.
 ///
@@ -160,7 +179,7 @@ class Upload {}
 /// chat room is posted by the user (markers will still be updated
 /// automatically with posted messages) — but no other functionality depends on
 /// this feature.
-class Marker {
+class Marker extends Equatable {
   /// The ID of the message which is being marked.
   final int messageId;
 
@@ -174,16 +193,19 @@ class Marker {
   ///
   /// The payload may be:
   ///
-  /// - a move_marker response;
-  /// - a marker_moved event.
+  /// - a `move_marker` response;
+  /// - a `marker_moved` event.
   Marker.fromPayload(Map<String, dynamic> data)
       : messageId = data['message_id'],
         updatedAt = DateTime.parse(data['updated_at']),
         userId = data['user_id'];
+
+  @override
+  List<Object> get props => [messageId, updatedAt, userId];
 }
 
 /// An inbox item.
-class InboxItem {
+class InboxItem extends Equatable {
   /// The hub to which the room belongs.
   final Hub hub;
 
@@ -205,8 +227,8 @@ class InboxItem {
   ///
   /// The payload may be:
   ///
-  /// - an inbox_updated event;
-  /// - an item in a list_rooms response.
+  /// - an `inbox_updated` event;
+  /// - an item in a `list_rooms` response.
   InboxItem.fromPayload(Map<String, dynamic> data, int userId)
       : hub = Hub.fromPayload(data['room']['hub']),
         isNew = data['marked_by'].indexOf(userId) == -1,
@@ -214,6 +236,9 @@ class InboxItem {
             ? null
             : Message.fromPayload(data['message']),
         roomId = data['room']['id'];
+
+  @override
+  List<Object?> get props => [hub, isNew, message, roomId];
 }
 
 //
@@ -221,7 +246,7 @@ class InboxItem {
 //
 
 /// The response of a successful join of a room channel.
-class RoomJoin {
+class RoomJoin extends Equatable {
   /// The room's custom attributes.
   final Map<String, dynamic> attributes;
 
@@ -253,4 +278,8 @@ class RoomJoin {
             ? null
             : Marker.fromPayload(data['markers'][1]),
         user = User.fromPayload(data['user']);
+
+  @override
+  List<Object?> get props =>
+      [attributes, id, messages, ownMarker, theirMarker, user];
 }

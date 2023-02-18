@@ -207,7 +207,7 @@ void main() {
           .then(expectAsync1((Marker marker) {
             expect(marker.messageId, equals(1));
 
-            // expect(room.ownMarker, equals(marker));
+            expect(room.ownMarker, equals(marker));
           }, count: 1))
           .catchError(expectAsync1((ErrorEvent error) {}, count: 0));
     });
