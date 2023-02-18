@@ -161,6 +161,49 @@ void main() {
     });
   });
 
+  group('delete message', () {
+    tearDown(() {
+      room.disconnect();
+    });
+
+    test('call deleteMessage too early → state error', () {
+      room = Room(connector, 1);
+
+      expect(() => room.deleteMessage(1), throwsStateError);
+    });
+
+    test('delete_message error → future rejected', () async {
+      room = await setUpRoom(roomId: 1);
+
+      // see test/server/lib/server_web/channels/room_channel.ex
+      // IDs of messages not in the room result in errors
+      final future = room.deleteMessage(2);
+
+      future
+          .then(expectAsync1((Message message) {}, count: 0))
+          .catchError(expectAsync1((ErrorEvent error) {}, count: 1));
+    });
+
+    test('delete_message ok → future resolves, message_deleted event',
+        () async {
+      room = await setUpRoom(roomId: 1);
+
+      room.on(
+          'message_deleted',
+          expectAsync1((MessageDeletedEvent event) {
+            expect(event.message.id, equals(1));
+          }, count: 1));
+
+      final future = room.deleteMessage(1);
+
+      future
+          .then(expectAsync1((Message message) {
+            expect(message.id, equals(1));
+          }, count: 1))
+          .catchError(expectAsync1((ErrorEvent error) {}, count: 0));
+    });
+  });
+
   group('move marker', () {
     tearDown(() {
       room.disconnect();

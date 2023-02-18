@@ -119,6 +119,14 @@ class MessagePostedEvent extends Event {
   MessagePostedEvent(this.message);
 }
 
+/// A [Room] event fired when a message is deleted from the room (by any user).
+class MessageDeletedEvent extends Event {
+  /// The deleted message.
+  final Message message;
+
+  MessageDeletedEvent(this.message);
+}
+
 /// A [Room] event fired when a marker in the room is updated or created (by
 /// any user).
 ///

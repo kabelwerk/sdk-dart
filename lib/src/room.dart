@@ -19,6 +19,7 @@ class Room {
     'error',
     'ready',
     'message_posted',
+    'message_deleted',
     'marker_moved',
   ]);
 
@@ -91,6 +92,12 @@ class Room {
         }
 
         _dispatcher.send('message_posted', MessagePostedEvent(message));
+      }
+
+      if (socketMessage.event.value == 'message_deleted') {
+        final message = Message.fromPayload(socketMessage.payload!);
+
+        _dispatcher.send('message_deleted', MessageDeletedEvent(message));
       }
 
       if (socketMessage.event.value == 'marker_moved') {
@@ -184,6 +191,33 @@ class Room {
 
     _connectHasBeenCalled = true;
     _setupChannel();
+  }
+
+  /// Deletes a message from the room.
+  ///
+  /// The message must have been posted by the connected user — users can only
+  /// delete their own messages.
+  ///
+  /// Returns a [Future] which resolves into the deleted message.
+  Future<Message> deleteMessage(int messageId) {
+    _ensureReady();
+
+    final Completer<Message> completer = Completer();
+
+    _channel.push('delete_message', {'message': messageId})
+      ..onReply('ok', (PushResponse pushResponse) {
+        final message = Message.fromPayload(pushResponse.response);
+
+        completer.complete(message);
+      })
+      ..onReply('error', (error) {
+        completer.completeError(ErrorEvent());
+      })
+      ..onReply('timeout', (error) {
+        completer.completeError(ErrorEvent());
+      });
+
+    return completer.future;
   }
 
   /// Closes the connection to the server.

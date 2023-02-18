@@ -62,7 +62,7 @@ defmodule ServerWeb.RoomChannel do
   def handle_in("post_message", %{} = payload, socket) do
     case payload do
       %{"text" => text} when text != "" ->
-        message = Factory.message(text: text)
+        message = Factory.message(room_id: socket.assigns.room_id, text: text)
 
         push(socket, "message_posted", message)
 
@@ -70,6 +70,24 @@ defmodule ServerWeb.RoomChannel do
 
       _ ->
         {:reply, :error, socket}
+    end
+  end
+
+  def handle_in("delete_message", %{"message" => message_id}, socket)
+      when is_integer(message_id) do
+    messages = socket.assigns.messages
+
+    case Enum.find(messages, fn message -> message.id == message_id end) do
+      nil ->
+        {:reply, :error, socket}
+
+      %{} = message ->
+        messages = Enum.reject(messages, fn message -> message.id == message_id end)
+        socket = assign(socket, :messages, messages)
+
+        push(socket, "message_deleted", message)
+
+        {:reply, {:ok, message}, socket}
     end
   end
 
