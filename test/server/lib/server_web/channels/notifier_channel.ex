@@ -28,8 +28,7 @@ defmodule ServerWeb.NotifierChannel do
   end
 
   defp generate_messages(num_messages, after_message_id \\ 0) do
-    Range.new(1, num_messages, 1)
-    |> Range.shift(after_message_id)
+    Range.new(1 + after_message_id, num_messages + after_message_id, 1)
     |> Enum.map(fn i -> Factory.message(id: i) end)
   end
 end
