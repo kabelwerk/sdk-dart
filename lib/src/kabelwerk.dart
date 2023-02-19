@@ -9,6 +9,7 @@ import './dispatcher.dart';
 import './events.dart';
 import './inbox.dart';
 import './models.dart';
+import './notifier.dart';
 import './room.dart';
 
 /// A Kabelwerk instance opens and maintains a websocket connection to the
@@ -179,6 +180,13 @@ class Kabelwerk {
     _ensureReady();
 
     return Inbox(_connector!, _user!.id);
+  }
+
+  /// Initialises and returns a [Notifier] instance.
+  Notifier openNotifier() {
+    _ensureReady();
+
+    return Notifier(_connector!, _user!.id);
   }
 
   /// Initialises and returns a [Room] instance for the chat room with the

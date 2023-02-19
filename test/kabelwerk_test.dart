@@ -151,18 +151,8 @@ void main() {
   group('user', () {
     late Kabelwerk kabelwerk;
 
-    setUp(() {
-      final completer = Completer();
-
-      kabelwerk = Kabelwerk();
-      kabelwerk.config.url = serverUrl;
-      kabelwerk.config.token = 'valid-token';
-
-      kabelwerk.on('ready', completer.complete);
-      kabelwerk.connect();
-
-      // return a future for async setUp
-      return completer.future;
+    setUp(() async {
+      kabelwerk = await setUpKabelwerk();
     });
 
     tearDown(() {
@@ -217,18 +207,8 @@ void main() {
   group('device', () {
     late Kabelwerk kabelwerk;
 
-    setUp(() {
-      final completer = Completer();
-
-      kabelwerk = Kabelwerk();
-      kabelwerk.config.url = serverUrl;
-      kabelwerk.config.token = 'valid-token';
-
-      kabelwerk.on('ready', completer.complete);
-      kabelwerk.connect();
-
-      // return a future for async setUp
-      return completer.future;
+    setUp(() async {
+      kabelwerk = await setUpKabelwerk();
     });
 
     tearDown(() {
@@ -265,18 +245,8 @@ void main() {
   group('create room', () {
     late Kabelwerk kabelwerk;
 
-    setUp(() {
-      final completer = Completer();
-
-      kabelwerk = Kabelwerk();
-      kabelwerk.config.url = serverUrl;
-      kabelwerk.config.token = 'valid-token';
-
-      kabelwerk.on('ready', completer.complete);
-      kabelwerk.connect();
-
-      // return a future for async setUp
-      return completer.future;
+    setUp(() async {
+      kabelwerk = await setUpKabelwerk();
     });
 
     tearDown(() {
@@ -305,21 +275,11 @@ void main() {
     });
   });
 
-  group('open inboxes and rooms', () {
+  group('open inboxes, notifiers, and rooms', () {
     late Kabelwerk kabelwerk;
 
-    setUp(() {
-      final completer = Completer();
-
-      kabelwerk = Kabelwerk();
-      kabelwerk.config.url = serverUrl;
-      kabelwerk.config.token = 'valid-token';
-
-      kabelwerk.on('ready', completer.complete);
-      kabelwerk.connect();
-
-      // return a future for async setUp
-      return completer.future;
+    setUp(() async {
+      kabelwerk = await setUpKabelwerk();
     });
 
     tearDown(() {
@@ -332,6 +292,18 @@ void main() {
       inbox.on('ready', expectAsync1((InboxReadyEvent event) {}, count: 1));
 
       inbox.connect();
+    });
+
+    test('init and connect a notifier', () {
+      final notifier = kabelwerk.openNotifier();
+
+      notifier.on(
+          'ready',
+          expectAsync1((NotifierReadyEvent event) {
+            expect(event.messages.length, equals(1));
+          }, count: 1));
+
+      notifier.connect();
     });
 
     test('init and connect a room', () {

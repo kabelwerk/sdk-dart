@@ -4,6 +4,7 @@ import 'package:kabelwerk/src/config.dart';
 import 'package:kabelwerk/src/connector.dart';
 import 'package:kabelwerk/src/dispatcher.dart';
 import 'package:kabelwerk/src/events.dart';
+import 'package:kabelwerk/src/kabelwerk.dart';
 
 const serverUrl = 'ws://localhost:4000/socket/user/websocket';
 
@@ -26,6 +27,22 @@ Future<Connector> setUpConnector(
 
   connector.prepareSocket();
   connector.connect();
+
+  return completer.future;
+}
+
+Future<Kabelwerk> setUpKabelwerk() {
+  final Completer<Kabelwerk> completer = Completer();
+  final kabelwerk = Kabelwerk();
+
+  kabelwerk.config.url = serverUrl;
+  kabelwerk.config.token = 'valid-token';
+
+  kabelwerk.once('ready', (KabelwerkReadyEvent event) {
+    completer.complete(kabelwerk);
+  });
+
+  kabelwerk.connect();
 
   return completer.future;
 }
