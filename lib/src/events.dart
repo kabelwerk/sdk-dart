@@ -138,3 +138,33 @@ class MarkerMovedEvent extends Event {
 
   MarkerMovedEvent(this.marker);
 }
+
+//
+// notifier events
+//
+
+/// A [Notifier] event fired when the Notifier instance has first established
+/// connection to the server and is ready to be used.
+///
+/// This event is fired at most once per Notifier instance.
+///
+/// You may wish to use this event to show a (potentially large) number of
+/// notifications to the user upon opening the client.
+class NotifierReadyEvent extends Event {
+  /// A list of messages not yet marked by the connected user.
+  final List<Message> messages;
+
+  NotifierReadyEvent(this.messages);
+}
+
+/// A [Notifier] event fired when there is a new message posted in any of the
+/// rooms that the connected user has access to.
+///
+/// If the websocket connection drops, fired upon reconnecting for each message
+/// posted while the websocket was disconnected.
+class NotifierUpdatedEvent extends Event {
+  /// The new message.
+  final Message message;
+
+  NotifierUpdatedEvent(this.message);
+}

@@ -51,6 +51,8 @@ void main() {
 
   group('connect', () {
     test('join error → error event', () {
+      // the test server's room channel rejects join attempts when the room id
+      // is negative
       room = Room(connector, -1);
 
       room.on('error', expectAsync1((ErrorEvent event) {}, count: 1));

@@ -37,6 +37,8 @@ void main() {
     late Inbox inbox;
 
     test('join error → error event', () {
+      // the test server's inbox channel rejects join attempts when the user id
+      // is negative
       inbox = Inbox(connector, -1);
 
       inbox.on('error', expectAsync1((ErrorEvent event) {}, count: 1));
