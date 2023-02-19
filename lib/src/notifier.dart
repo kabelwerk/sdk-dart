@@ -54,13 +54,39 @@ class Notifier {
     }
   }
 
-  void _setUpChannel() {
+  void _handleJoinResponse(Map payload) {
+    if (payload['status'] == 'ok') {
+      final List<Message> messages = List.unmodifiable(payload['response']
+              ['messages']
+          .map((item) => Message.fromPayload(item)));
+
+      _updateChannelJoinParameters(messages);
+
+      if (_ready == false) {
+        _ready = true;
+        _dispatcher.send('ready', NotifierReadyEvent(messages));
+      } else {
+        for (final message in messages) {
+          _dispatcher.send('updated', NotifierUpdatedEvent(message));
+        }
+      }
+    } else {
+      _dispatcher.send('error', ErrorEvent());
+    }
+  }
+
+  Future<PushResponse> _setUpChannel() {
     _channel = _connector.socket.addChannel(
         topic: 'notifier:${_userId}', parameters: _channelJoinParameters);
 
     _channel.messages.listen((socketMessage) {
+      if (socketMessage.event.value == 'phx_reply' &&
+          socketMessage.ref == _channel.joinRef) {
+        _handleJoinResponse(socketMessage.payload!);
+      }
+
       if (socketMessage.event.value == 'message_posted') {
-        final message = Message.fromPayload(socketMessage.payload!);
+        final message = Message.fromPayload(socketMessage.payload!['message']);
 
         _updateChannelJoinParameters([message]);
 
@@ -68,29 +94,7 @@ class Notifier {
       }
     });
 
-    _channel.join()
-      ..onReply('ok', (PushResponse pushResponse) {
-        final List<Message> messages = List.unmodifiable(pushResponse
-            .response['messages']
-            .map((item) => Message.fromPayload(item)));
-
-        _updateChannelJoinParameters(messages);
-
-        if (_ready == false) {
-          _ready = true;
-          _dispatcher.send('ready', NotifierReadyEvent(messages));
-        } else {
-          for (final message in messages) {
-            _dispatcher.send('updated', NotifierUpdatedEvent(message));
-          }
-        }
-      })
-      ..onReply('error', (error) {
-        _dispatcher.send('error', ErrorEvent());
-      })
-      ..onReply('timeout', (error) {
-        _dispatcher.send('error', ErrorEvent());
-      });
+    return _channel.join().future;
   }
 
   //

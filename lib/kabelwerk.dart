@@ -9,4 +9,5 @@ export 'src/inbox.dart';
 export 'src/kabelwerk.dart';
 export 'src/models.dart'
     show Hub, User, Device, MessageType, Message, Upload, Marker, InboxItem;
+export 'src/notifier.dart' show Notifier;
 export 'src/room.dart';

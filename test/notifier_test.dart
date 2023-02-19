@@ -9,7 +9,6 @@ import 'helpers/setup.dart';
 void main() {
   group('connect', () {
     late Connector connector;
-    late Notifier notifier;
 
     setUp(() async {
       connector = await setUpConnector();
@@ -22,7 +21,7 @@ void main() {
     test('join error → error event', () {
       // the test server's notifier channel rejects join attempts when the user
       // id is negative
-      notifier = Notifier(connector, -1);
+      final notifier = Notifier(connector, -1);
 
       notifier.on('error', expectAsync1((ErrorEvent event) {}, count: 1));
 
@@ -30,7 +29,7 @@ void main() {
     });
 
     test('join ok → ready event', () {
-      notifier = Notifier(connector, 1);
+      final notifier = Notifier(connector, 1);
 
       notifier.on(
           'ready',
@@ -42,7 +41,7 @@ void main() {
     });
 
     test('call connect twice → state error', () {
-      notifier = Notifier(connector, 0);
+      final notifier = Notifier(connector, 0);
 
       notifier.connect();
 
@@ -50,40 +49,104 @@ void main() {
     });
   });
 
-  // group('re-connect', () {
-  //   late Connector connector;
-  //   late Notifier notifier;
+  group('reconnect', () {
+    late Connector connector;
+    late Notifier notifier;
 
-  //   setUp(() {
-  //     config.token = 'connect-then-disconnect';
+    setUp(() async {
+      connector = await setUpConnector(
+          token: 'connect-then-disconnect',
+          refreshToken: (_) => Future.value('valid-token'));
+    });
 
-  //     connector = Connector(config, dispatcher);
-  //     connector.prepareSocket();
+    tearDown(() {
+      notifier.disconnect();
+      connector.disconnect();
+    });
 
-  //     // return a future for async setUp
-  //     return connector.connect();
-  //   });
+    test('new message while reconnecting', () {
+      // the test server's notifier channel generates another batch of messages
+      // at rejoin if the user id is an odd number
+      notifier = Notifier(connector, 1);
 
-  //   tearDown(() {
-  //     connector.disconnect();
-  //   });
+      // this also verifies that the ready event is not emitted more than once
+      notifier.on(
+          'ready',
+          expectAsync1((NotifierReadyEvent event) {
+            expect(event.messages.length, equals(1));
+          }, count: 1));
 
-  //   test('after', () {
-  //     notifier = Notifier(connector, 1);
+      notifier.on(
+          'updated',
+          expectAsync1((NotifierUpdatedEvent event) {
+            expect(event.message.id, equals(2));
+          }, count: 1));
 
-  //     notifier.on(
-  //         'ready',
-  //         expectAsync1((NotifierReadyEvent event) {
-  //           expect(event.messages.length, equals(1));
-  //         }, count: 1));
+      notifier.connect();
+    });
 
-  //     notifier.on(
-  //         'updated',
-  //         expectAsync1((NotifierUpdatedEvent event) {
-  //           expect(event.message.id, equals(2));
-  //         }, count: 1));
+    test('no new messages while reconnecting', () {
+      notifier = Notifier(connector, 2);
 
-  //     notifier.connect();
-  //   });
-  // });
+      notifier.on(
+          'ready',
+          expectAsync1((NotifierReadyEvent event) {
+            expect(event.messages.length, equals(2));
+          }, count: 1));
+
+      notifier.on(
+          'updated', expectAsync1((NotifierUpdatedEvent event) {}, count: 0));
+
+      notifier.connect();
+    });
+
+    test('multiple new messages while reconnecting', () {
+      notifier = Notifier(connector, 3);
+
+      notifier.on(
+          'ready',
+          expectAsync1((NotifierReadyEvent event) {
+            expect(event.messages.length, equals(3));
+          }, count: 1));
+
+      notifier.on(
+          'updated', expectAsync1((NotifierUpdatedEvent event) {}, count: 3));
+
+      notifier.connect();
+    });
+  });
+
+  group('message_posted', () {
+    late Connector connector;
+    late Notifier notifier;
+
+    setUp(() async {
+      connector = await setUpConnector();
+    });
+
+    tearDown(() {
+      notifier.disconnect();
+      connector.disconnect();
+    });
+
+    test('message_posted → updated event', () {
+      // the test server's notifier channel will send a message_posted event
+      // when the user id is 41
+      notifier = Notifier(connector, 41);
+
+      notifier.on(
+          'ready',
+          expectAsync1((NotifierReadyEvent event) {
+            expect(event.messages.length, equals(41));
+          }, count: 1));
+
+      notifier.on(
+          'updated',
+          expectAsync1((NotifierUpdatedEvent event) {
+            expect(event.message.id, equals(42));
+          }, count: 1));
+
+      notifier.connect();
+    });
+  });
 }

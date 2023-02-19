@@ -181,7 +181,7 @@ defmodule Server.Factory do
   """
   def notifier_message(opts \\ []) do
     %{
-      message: Keyword.get(opts, :message, message())
+      message: message(opts)
     }
   end
 end
