@@ -39,7 +39,7 @@ defmodule ServerWeb.PrivateChannel do
   def handle_in("create_room", %{"hub" => hub_id}, socket) do
     case hub_id do
       1 ->
-        output = %{id: 1, hub_id: 1, user_id: 1}
+        output = Factory.newly_created_room()
 
         {:reply, {:ok, output}, socket}
 

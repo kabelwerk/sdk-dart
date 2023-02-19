@@ -1,4 +1,8 @@
 defmodule Server.Factory do
+  #
+  # base objects
+  #
+
   def timestamp() do
     DateTime.utc_now() |> DateTime.truncate(:second)
   end
@@ -19,6 +23,13 @@ defmodule Server.Factory do
     }
   end
 
+  #
+  # private channel
+  #
+
+  @doc """
+  Generate a payload for an update_user response or an user_updated event.
+  """
   def connected_user(opts \\ []) do
     Map.merge(user(opts), %{
       hub_id: nil,
@@ -27,6 +38,9 @@ defmodule Server.Factory do
     })
   end
 
+  @doc """
+  Generate a payload for an update_device response.
+  """
   def device(opts \\ []) do
     %{
       id: 1,
@@ -37,6 +51,35 @@ defmodule Server.Factory do
     }
   end
 
+  @doc """
+  Generate a payload for a create_room response.
+  """
+  def newly_created_room() do
+    %{
+      id: 1,
+      hub_id: 1,
+      user_id: 1
+    }
+  end
+
+  @doc """
+  Generate a payload for a private channel join response.
+  """
+  def private_join(opts \\ []) do
+    %{
+      room_ids: Keyword.get(opts, :room_ids, []),
+      user: Keyword.get(opts, :user, connected_user())
+    }
+  end
+
+  #
+  # room channel
+  #
+
+  @doc """
+  Generate a payload for a post_message or a delete_message response — or a
+  message_posted or a message_deleted event.
+  """
   def message(opts \\ []) do
     %{
       html: "<p>hello!</p>",
@@ -51,6 +94,9 @@ defmodule Server.Factory do
     }
   end
 
+  @doc """
+  Generate a payload for a move_marker response or a marker_moved event.
+  """
   def marker(opts \\ []) do
     %{
       message_id: Keyword.get(opts, :message_id, 1),
@@ -60,6 +106,43 @@ defmodule Server.Factory do
     }
   end
 
+  @doc """
+  Generate a payload for a list_messages response.
+  """
+  def messages_list(opts \\ []) do
+    %{
+      messages: Keyword.get(opts, :messages, [])
+    }
+  end
+
+  @doc """
+  Generate a payload for a set_attributes response.
+  """
+  def room_details(opts \\ []) do
+    %{
+      attributes: Keyword.get(opts, :attributes, %{}),
+      id: Keyword.get(opts, :id, 1),
+      user: user()
+    }
+  end
+
+  @doc """
+  Generate a payload for a room channel join response.
+  """
+  def room_join(opts \\ []) do
+    Map.merge(room_details(opts), %{
+      markers: Keyword.get(opts, :markers, [nil, nil]),
+      messages: Keyword.get(opts, :messages, [])
+    })
+  end
+
+  #
+  # inbox channel
+  #
+
+  @doc """
+  Generate a payload for an inbox_updated event.
+  """
   def inbox_item(opts \\ []) do
     %{
       marked_by: [1, 2],
@@ -71,13 +154,34 @@ defmodule Server.Factory do
     }
   end
 
-  def room_join(opts \\ []) do
+  @doc """
+  Generate a payload for a list_rooms response.
+  """
+  def inbox_items_list(opts \\ []) do
     %{
-      attributes: %{},
-      id: Keyword.get(opts, :id, 1),
-      markers: Keyword.get(opts, :markers, [nil, nil]),
-      messages: Keyword.get(opts, :messages, []),
-      user: user()
+      items: Keyword.get(opts, :items, [])
+    }
+  end
+
+  #
+  # notifier channel
+  #
+
+  @doc """
+  Generate a payload for a notifier channel join response.
+  """
+  def notifier_join(opts \\ []) do
+    %{
+      messages: Keyword.get(opts, :messages, [])
+    }
+  end
+
+  @doc """
+  Generate a payload for a message_posted event on the notifier channel.
+  """
+  def notifier_message(opts \\ []) do
+    %{
+      message: Keyword.get(opts, :message, message())
     }
   end
 end

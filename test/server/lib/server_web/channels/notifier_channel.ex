@@ -15,16 +15,19 @@ defmodule ServerWeb.NotifierChannel do
 
   # re-join
   defp join_output(user_id, %{"after" => after_message_id}) do
-    if rem(user_id, 2) == 0 do
-      %{messages: []}
-    else
-      %{messages: generate_messages(user_id, after_message_id)}
-    end
+    messages =
+      if rem(user_id, 2) == 0 do
+        []
+      else
+        generate_messages(user_id, after_message_id)
+      end
+
+    Factory.notifier_join(messages: messages)
   end
 
   # initial join
   defp join_output(user_id, %{}) do
-    %{messages: generate_messages(user_id)}
+    Factory.notifier_join(messages: generate_messages(user_id))
   end
 
   defp generate_messages(num_messages, after_message_id \\ 0) do

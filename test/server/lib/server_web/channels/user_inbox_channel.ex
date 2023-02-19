@@ -31,7 +31,7 @@ defmodule ServerWeb.UserInboxChannel do
     limit = Map.get(payload, "limit", 10)
 
     slice = Enum.slice(socket.assigns.inbox_items, offset, limit)
-    output = %{items: slice}
+    output = Factory.inbox_items_list(items: slice)
 
     {:reply, {:ok, output}, socket}
   end

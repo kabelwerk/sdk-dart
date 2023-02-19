@@ -38,9 +38,7 @@ defmodule ServerWeb.RoomChannel do
       |> Enum.slice(0, 100)
       |> Enum.reverse()
 
-    output = %{
-      messages: messages
-    }
+    output = Factory.messages_list(messages: messages)
 
     {:reply, {:ok, output}, socket}
   end
@@ -94,9 +92,7 @@ defmodule ServerWeb.RoomChannel do
   def handle_in("set_attributes", %{"attributes" => attributes}, socket) do
     case attributes do
       %{"valid" => true} ->
-        output = %{
-          attributes: attributes
-        }
+        output = Factory.room_details(attributes: attributes)
 
         {:reply, {:ok, output}, socket}
 
