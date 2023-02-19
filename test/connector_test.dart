@@ -6,6 +6,8 @@ import 'package:kabelwerk/src/connector.dart';
 import 'package:kabelwerk/src/dispatcher.dart';
 import 'package:kabelwerk/src/events.dart';
 
+import 'helpers/setup.dart';
+
 void main() {
   late Config config;
   late Dispatcher dispatcher;
@@ -13,7 +15,7 @@ void main() {
 
   setUp(() {
     config = Config();
-    config.url = 'ws://localhost:4000/socket/user/websocket';
+    config.url = serverUrl;
 
     dispatcher = Dispatcher(['error', 'connected', 'disconnected']);
 

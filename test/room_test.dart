@@ -2,37 +2,23 @@ import 'dart:async';
 
 import 'package:test/test.dart';
 
-import 'package:kabelwerk/src/config.dart';
 import 'package:kabelwerk/src/connector.dart';
-import 'package:kabelwerk/src/dispatcher.dart';
 import 'package:kabelwerk/src/events.dart';
 import 'package:kabelwerk/src/models.dart';
 import 'package:kabelwerk/src/room.dart';
 
+import 'helpers/setup.dart';
+
 void main() {
-  late Config config;
-  late Dispatcher dispatcher;
   late Connector connector;
   late Room room;
 
-  // set up the connector before each test
-  setUp(() {
-    config = Config();
-    config.url = 'ws://localhost:4000/socket/user/websocket';
-    config.token = 'valid-token';
-
-    dispatcher = Dispatcher(['error', 'connected', 'disconnected']);
-
-    connector = Connector(config, dispatcher);
-    connector.prepareSocket();
-
-    // return a future for async setUp
-    return connector.connect();
+  setUp(() async {
+    connector = await setUpConnector();
   });
 
   tearDown(() {
     connector.disconnect();
-    dispatcher.off();
   });
 
   Future<Room> setUpRoom({int roomId = 0}) {

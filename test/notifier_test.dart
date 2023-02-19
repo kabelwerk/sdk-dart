@@ -1,40 +1,23 @@
-import 'dart:async';
-
 import 'package:test/test.dart';
 
-import 'package:kabelwerk/src/config.dart';
 import 'package:kabelwerk/src/connector.dart';
-import 'package:kabelwerk/src/dispatcher.dart';
 import 'package:kabelwerk/src/events.dart';
-import 'package:kabelwerk/src/models.dart';
 import 'package:kabelwerk/src/notifier.dart';
 
+import 'helpers/setup.dart';
+
 void main() {
-  late Config config;
-  late Dispatcher dispatcher;
-  late Connector connector;
-
-  setUp(() {
-    config = Config();
-    config.url = 'ws://localhost:4000/socket/user/websocket';
-    config.token = 'valid-token';
-
-    dispatcher = Dispatcher(['error', 'connected', 'disconnected']);
-
-    connector = Connector(config, dispatcher);
-    connector.prepareSocket();
-
-    // return a future for async setUp
-    return connector.connect();
-  });
-
-  tearDown(() {
-    connector.disconnect();
-    dispatcher.off();
-  });
-
   group('connect', () {
+    late Connector connector;
     late Notifier notifier;
+
+    setUp(() async {
+      connector = await setUpConnector();
+    });
+
+    tearDown(() {
+      connector.disconnect();
+    });
 
     test('join error → error event', () {
       // the test server's notifier channel rejects join attempts when the user

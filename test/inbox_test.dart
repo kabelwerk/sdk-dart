@@ -2,44 +2,29 @@ import 'dart:async';
 
 import 'package:test/test.dart';
 
-import 'package:kabelwerk/src/config.dart';
 import 'package:kabelwerk/src/connector.dart';
-import 'package:kabelwerk/src/dispatcher.dart';
 import 'package:kabelwerk/src/events.dart';
 import 'package:kabelwerk/src/inbox.dart';
 import 'package:kabelwerk/src/models.dart';
 
+import 'helpers/setup.dart';
+
 void main() {
-  late Config config;
-  late Dispatcher dispatcher;
   late Connector connector;
 
-  setUp(() {
-    config = Config();
-    config.url = 'ws://localhost:4000/socket/user/websocket';
-    config.token = 'valid-token';
-
-    dispatcher = Dispatcher(['error', 'connected', 'disconnected']);
-
-    connector = Connector(config, dispatcher);
-    connector.prepareSocket();
-
-    // return a future for async setUp
-    return connector.connect();
+  setUp(() async {
+    connector = await setUpConnector();
   });
 
   tearDown(() {
     connector.disconnect();
-    dispatcher.off();
   });
 
   group('connect', () {
-    late Inbox inbox;
-
     test('join error → error event', () {
       // the test server's inbox channel rejects join attempts when the user id
       // is negative
-      inbox = Inbox(connector, -1);
+      final inbox = Inbox(connector, -1);
 
       inbox.on('error', expectAsync1((ErrorEvent event) {}, count: 1));
 
@@ -47,7 +32,7 @@ void main() {
     });
 
     test('join ok, list_rooms ok → ready event', () {
-      inbox = Inbox(connector, 1);
+      final inbox = Inbox(connector, 1);
 
       inbox.on(
           'ready',
@@ -60,7 +45,7 @@ void main() {
     });
 
     test('call connect twice → state error', () {
-      inbox = Inbox(connector, 0);
+      final inbox = Inbox(connector, 0);
 
       inbox.connect();
 

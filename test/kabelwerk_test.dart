@@ -7,7 +7,7 @@ import 'package:kabelwerk/src/events.dart';
 import 'package:kabelwerk/src/kabelwerk.dart';
 import 'package:kabelwerk/src/models.dart';
 
-const serverUrl = 'ws://localhost:4000/socket/user/websocket';
+import 'helpers/setup.dart';
 
 void main() {
   group('connection', () {
