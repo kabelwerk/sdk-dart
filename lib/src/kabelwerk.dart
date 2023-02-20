@@ -1,6 +1,8 @@
 import 'dart:async';
 
-import 'package:phoenix_socket/phoenix_socket.dart';
+import 'package:phoenix_socket/phoenix_socket.dart'
+    show PhoenixChannel, PhoenixSocket, PushResponse;
+import 'package:phoenix_socket/phoenix_socket.dart' as phoenix show Message;
 
 import './config.dart';
 import './connection_state.dart';
@@ -28,7 +30,7 @@ class Kabelwerk {
   ]);
 
   Connector? _connector;
-  PhoenixChannel? _privateChannel;
+  PhoenixChannel? _channel;
 
   User? _user;
   bool _ready = false;
@@ -51,10 +53,23 @@ class Kabelwerk {
   // private methods
   //
 
-  void _setupPrivateChannel() {
-    _privateChannel = _connector!.socket.addChannel(topic: 'private');
+  Map<String, dynamic> _getChannelJoinParameters() {
+    Map<String, dynamic> parameters = Map();
 
-    _privateChannel!.messages.listen((message) {
+    if (config.ensureRoomsOnAllHubs == true) {
+      parameters['ensure_rooms'] = 'all';
+    } else if (config.ensureRoomsOn.length > 0) {
+      parameters['ensure_rooms'] = config.ensureRoomsOn;
+    }
+
+    return parameters;
+  }
+
+  void _setUpChannel() {
+    _channel = _connector!.socket
+        .addChannel(topic: 'private', parameters: _getChannelJoinParameters());
+
+    _channel!.messages.listen((phoenix.Message message) {
       if (message.event.value == 'user_updated') {
         final user = User.fromPayload(message.payload!);
         _user = user;
@@ -62,8 +77,8 @@ class Kabelwerk {
       }
     });
 
-    _dispatcher.once('connected', (_event) {
-      _privateChannel!.join()
+    _dispatcher.once('connected', (ConnectedEvent event) {
+      _channel!.join()
         ..onReply('ok', (PushResponse pushResponse) {
           final user = User.fromPayload(pushResponse.response);
 
@@ -113,7 +128,7 @@ class Kabelwerk {
     _connector = Connector(config, _dispatcher);
     _connector!.prepareSocket();
 
-    _setupPrivateChannel();
+    _setUpChannel();
 
     return _connector!.connect();
   }
@@ -126,7 +141,7 @@ class Kabelwerk {
 
     final Completer<int> completer = Completer();
 
-    _privateChannel!.push('create_room', {'hub': hubId})
+    _channel!.push('create_room', {'hub': hubId})
       ..onReply('ok', (PushResponse pushResponse) {
         final int roomId = pushResponse.response['id'];
         completer.complete(roomId);
@@ -143,8 +158,8 @@ class Kabelwerk {
 
   /// Closes the connection to the server.
   void disconnect() {
-    _privateChannel?.leave();
-    _privateChannel = null;
+    _channel?.leave();
+    _channel = null;
 
     _connector?.disconnect();
     _connector = null;
@@ -214,7 +229,7 @@ class Kabelwerk {
 
     final Completer<Device> completer = Completer();
 
-    _privateChannel!.push('update_device', {
+    _channel!.push('update_device', {
       'push_notifications_token': pushNotificationsToken,
       'push_notifications_enabled': pushNotificationsEnabled
     })
@@ -238,7 +253,7 @@ class Kabelwerk {
 
     final Completer<User> completer = Completer();
 
-    _privateChannel!.push('update_user', {'name': name})
+    _channel!.push('update_user', {'name': name})
       ..onReply('ok', (PushResponse pushResponse) {
         final user = User.fromPayload(pushResponse.response);
         _user = user;

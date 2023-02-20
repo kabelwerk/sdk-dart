@@ -216,13 +216,14 @@ void main() {
     });
 
     test('update_device ok → future resolves', () {
+      // the test server's private channel accepts update_device requests only
+      // when made with the parameters below
       final future = kabelwerk.updateDevice(
           pushNotificationsToken: 'valid-token',
           pushNotificationsEnabled: true);
 
       future
           .then(expectAsync1((Device device) {
-            // see test/server/lib/server_web/channels/private_channel.ex
             expect(device.id, equals(1));
             expect(device.pushNotificationsToken, equals('valid-token'));
             expect(device.pushNotificationsEnabled, equals(true));
@@ -254,11 +255,12 @@ void main() {
     });
 
     test('create_room ok → future resolves', () {
+      // the test server's private channel accepts create_room requests only if
+      // the hub id is 1
       final future = kabelwerk.createRoom(1);
 
       future
           .then(expectAsync1((int roomId) {
-            // see test/server/lib/server_web/channels/private_channel.ex
             expect(roomId, equals(1));
           }, count: 1))
           .catchError(expectAsync1((error) {}, count: 0));

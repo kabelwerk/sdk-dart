@@ -3,7 +3,8 @@ class Config {
   /// The URL of the Kabelwerk backend to connect to.
   String url = 'wss://hub.kabelwerk.io/socket/user';
 
-  /// A JWT token to authenticate the connection.
+  /// A [JWT](https://datatracker.ietf.org/doc/html/rfc7519) token to
+  /// authenticate the connection.
   ///
   /// The token has to:
   ///
@@ -17,7 +18,7 @@ class Config {
   /// respective user's key.
   String token = '';
 
-  /// A function to refresh rejected JWT tokens.
+  /// A function to refresh rejected tokens.
   ///
   /// If this setting is provided, it must be a function that takes as argument
   /// the current authentication token and returns a [Future] resolving into a
@@ -32,4 +33,20 @@ class Config {
   /// function, then the former will be used for the initial connection, and
   /// the latter each time when reconnecting.
   Future<String> Function(String)? refreshToken = null;
+
+  /// A list of hubs on which to create rooms, if these do not exist already,
+  /// for the connected user.
+  ///
+  /// The value has to be a list of hub slugs.
+  ///
+  /// If Kabelwerk fails to ensure that the connected user has a room on each
+  /// of the specified hubs (e.g. because a slug is wrong), an [ErrorEvent] is
+  /// emitted and the connection is terminated.
+  List<String> ensureRoomsOn = [];
+
+  /// Whether to ensure that the connected user has rooms on all hubs.
+  ///
+  /// This is a shortcut for setting [ensureRoomsOn] to a list containing all
+  /// hub slugs.
+  bool ensureRoomsOnAllHubs = false;
 }
