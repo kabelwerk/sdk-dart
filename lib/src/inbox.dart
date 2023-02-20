@@ -1,6 +1,8 @@
 import 'dart:async';
 
-import 'package:phoenix_socket/phoenix_socket.dart';
+import 'package:phoenix_socket/phoenix_socket.dart'
+    show PhoenixChannel, PushResponse;
+import 'package:phoenix_socket/phoenix_socket.dart' as phoenix show Message;
 
 import './connector.dart';
 import './dispatcher.dart';
@@ -23,10 +25,9 @@ class Inbox {
 
   final Map<int, InboxItem> _items = Map();
 
+  late PhoenixChannel _channel;
   bool _connectHasBeenCalled = false;
   bool _ready = false;
-
-  late PhoenixChannel _channel;
 
   //
   // getters
@@ -53,10 +54,19 @@ class Inbox {
   // private methods
   //
 
-  void _setupChannel() {
+  Future<PushResponse> _setupChannel() {
     _channel = _connector.socket.addChannel(topic: 'user_inbox:${_userId}');
 
-    _channel.messages.listen((message) {
+    _channel.messages.listen((phoenix.Message message) {
+      if (message.event.value == 'phx_reply' &&
+          message.ref == _channel.joinRef) {
+        if (message.payload!['status'] == 'ok') {
+          _loadItemsOnJoin();
+        } else {
+          _dispatcher.send('error', ErrorEvent());
+        }
+      }
+
       if (message.event.value == 'inbox_updated') {
         final inboxItem = InboxItem.fromPayload(message.payload!, _userId);
         _items[inboxItem.roomId] = inboxItem;
@@ -64,16 +74,7 @@ class Inbox {
       }
     });
 
-    _channel.join()
-      ..onReply('ok', (PushResponse pushResponse) {
-        _loadItemsOnJoin();
-      })
-      ..onReply('error', (error) {
-        _dispatcher.send('error', ErrorEvent());
-      })
-      ..onReply('timeout', (error) {
-        _dispatcher.send('error', ErrorEvent());
-      });
+    return _channel.join().future;
   }
 
   void _loadItemsOnJoin() {
@@ -107,22 +108,27 @@ class Inbox {
   ///
   /// Usually all event listeners should be already attached when this method
   /// is invoked.
-  void connect() {
+  ///
+  /// Returns a [Future] which resolves when the first connection attempt is
+  /// carried out. However, note that connection may not always succeed on the
+  /// first attempt — for state changes, do rely on the [InboxReadyEvent] and
+  /// [InboxUpdatedEvent] events instead.
+  Future<PushResponse> connect() {
     if (_connectHasBeenCalled != false) {
       throw StateError(
           "This Inbox instance's .connect() method has already been called once.");
     }
 
     _connectHasBeenCalled = true;
-    _setupChannel();
+
+    return _setupChannel();
   }
 
   /// Closes the connection to the server.
   void disconnect() {
-    _channel.leave();
-
-    _items.clear();
-    _ready = false;
+    if (_connectHasBeenCalled == true) {
+      _channel.leave();
+    }
   }
 
   /// Loads more inbox items.

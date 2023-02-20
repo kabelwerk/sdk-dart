@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:phoenix_socket/phoenix_socket.dart'
     show PhoenixChannel, PushResponse;
+import 'package:phoenix_socket/phoenix_socket.dart' as phoenix show Message;
 
 import './connector.dart';
 import './dispatcher.dart';
@@ -79,7 +80,7 @@ class Notifier {
     _channel = _connector.socket.addChannel(
         topic: 'notifier:${_userId}', parameters: _channelJoinParameters);
 
-    _channel.messages.listen((socketMessage) {
+    _channel.messages.listen((phoenix.Message socketMessage) {
       if (socketMessage.event.value == 'phx_reply' &&
           socketMessage.ref == _channel.joinRef) {
         _handleJoinResponse(socketMessage.payload!);
@@ -105,14 +106,20 @@ class Notifier {
   ///
   /// Usually all event listeners should be already attached when this method
   /// is invoked.
-  void connect() {
+  ///
+  /// Returns a [Future] which resolves when the first connection attempt is
+  /// carried out. However, note that connection may not always succeed on the
+  /// first attempt — for state changes, do rely on the [NotifierReadyEvent]
+  /// and [NotifierUpdatedEvent] events instead.
+  Future<PushResponse> connect() {
     if (_connectHasBeenCalled != false) {
       throw StateError(
           "This Notifier instance's .connect() method was already called once.");
     }
 
     _connectHasBeenCalled = true;
-    _setUpChannel();
+
+    return _setUpChannel();
   }
 
   /// Closes the connection to the server.
