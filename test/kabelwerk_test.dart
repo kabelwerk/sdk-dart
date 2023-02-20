@@ -102,18 +102,14 @@ void main() {
       kabelwerk.connect();
     });
 
-    test('disconnect → disconnected event, inactive state', () async {
+    test('call connect twice → state error', () async {
       kabelwerk.config.token = 'valid-token';
 
-      kabelwerk.on(
-          'disconnected',
-          expectAsync1((DisconnectedEvent event) {
-            expect(event.connectionState, equals(ConnectionState.inactive));
-            expect(kabelwerk.state, equals(ConnectionState.inactive));
-          }, count: 1));
+      final future = kabelwerk.connect();
 
-      await kabelwerk.connect();
-      kabelwerk.disconnect();
+      expect(() => kabelwerk.connect(), throwsStateError);
+
+      await future;
     });
   });
 
@@ -167,18 +163,40 @@ void main() {
     });
   });
 
-  group('user', () {
+  group('disconnect', () {
     late Kabelwerk kabelwerk;
 
-    setUp(() async {
+    test('disconnect → disconnected event, inactive state', () async {
       kabelwerk = await setUpKabelwerk();
+
+      kabelwerk.on(
+          'disconnected',
+          expectAsync1((DisconnectedEvent event) {
+            expect(event.connectionState, equals(ConnectionState.inactive));
+            expect(kabelwerk.state, equals(ConnectionState.inactive));
+          }, count: 1));
+
+      kabelwerk.disconnect();
     });
+  });
+
+  group('user', () {
+    late Kabelwerk kabelwerk;
 
     tearDown(() {
       kabelwerk.disconnect();
     });
 
-    test('get user', () {
+    test('call user or updateUser too early → state error', () {
+      kabelwerk = Kabelwerk();
+
+      expect(() => kabelwerk.user, throwsStateError);
+      expect(() => kabelwerk.updateUser(name: 'Valid Name'), throwsStateError);
+    });
+
+    test('get user', () async {
+      kabelwerk = await setUpKabelwerk();
+
       // the test server's private channel returns a user with the following
       // properties by default
       expect(kabelwerk.user.id, equals(1));
@@ -186,7 +204,9 @@ void main() {
       expect(kabelwerk.user.name, equals('Test User'));
     });
 
-    test('update_user ok → future resolves, user_updated event', () {
+    test('update_user ok → future resolves, user_updated event', () async {
+      kabelwerk = await setUpKabelwerk();
+
       kabelwerk.on(
           'user_updated',
           expectAsync1((UserUpdatedEvent event) {
@@ -210,7 +230,9 @@ void main() {
           .catchError(expectAsync1((error) {}, count: 0));
     });
 
-    test('update_user error → future rejected', () {
+    test('update_user error → future rejected', () async {
+      kabelwerk = await setUpKabelwerk();
+
       final future = kabelwerk.updateUser(name: 'Invalid Name');
 
       future
@@ -224,15 +246,23 @@ void main() {
   group('device', () {
     late Kabelwerk kabelwerk;
 
-    setUp(() async {
-      kabelwerk = await setUpKabelwerk();
-    });
-
     tearDown(() {
       kabelwerk.disconnect();
     });
 
-    test('update_device ok → future resolves', () {
+    test('call updateDevice too early → state error', () {
+      kabelwerk = Kabelwerk();
+
+      expect(
+          () => kabelwerk.updateDevice(
+              pushNotificationsToken: 'valid-token',
+              pushNotificationsEnabled: true),
+          throwsStateError);
+    });
+
+    test('update_device ok → future resolves', () async {
+      kabelwerk = await setUpKabelwerk();
+
       // the test server's private channel accepts update_device requests only
       // when made with the parameters below
       final future = kabelwerk.updateDevice(
@@ -248,7 +278,9 @@ void main() {
           .catchError(expectAsync1((error) {}, count: 0));
     });
 
-    test('update_device error → future rejected', () {
+    test('update_device error → future rejected', () async {
+      kabelwerk = await setUpKabelwerk();
+
       final future = kabelwerk.updateDevice(
           pushNotificationsToken: 'bad-token', pushNotificationsEnabled: true);
 
@@ -263,15 +295,19 @@ void main() {
   group('create room', () {
     late Kabelwerk kabelwerk;
 
-    setUp(() async {
-      kabelwerk = await setUpKabelwerk();
-    });
-
     tearDown(() {
       kabelwerk.disconnect();
     });
 
-    test('create_room ok → future resolves', () {
+    test('call createRoom too early → state error', () {
+      kabelwerk = Kabelwerk();
+
+      expect(() => kabelwerk.createRoom(1), throwsStateError);
+    });
+
+    test('create_room ok → future resolves', () async {
+      kabelwerk = await setUpKabelwerk();
+
       // the test server's private channel accepts create_room requests only if
       // the hub id is 1
       final future = kabelwerk.createRoom(1);
@@ -283,7 +319,9 @@ void main() {
           .catchError(expectAsync1((error) {}, count: 0));
     });
 
-    test('create_room error → future rejected', () {
+    test('create_room error → future rejected', () async {
+      kabelwerk = await setUpKabelwerk();
+
       final future = kabelwerk.createRoom(2);
 
       future
@@ -297,15 +335,21 @@ void main() {
   group('open inboxes, notifiers, and rooms', () {
     late Kabelwerk kabelwerk;
 
-    setUp(() async {
-      kabelwerk = await setUpKabelwerk();
-    });
-
     tearDown(() {
       kabelwerk.disconnect();
     });
 
-    test('init and connect an inbox', () {
+    test('call open* too early → state error', () {
+      kabelwerk = Kabelwerk();
+
+      expect(() => kabelwerk.openInbox(), throwsStateError);
+      expect(() => kabelwerk.openNotifier(), throwsStateError);
+      expect(() => kabelwerk.openRoom(), throwsStateError);
+    });
+
+    test('init and connect an inbox', () async {
+      kabelwerk = await setUpKabelwerk();
+
       final inbox = kabelwerk.openInbox();
 
       inbox.on('ready', expectAsync1((InboxReadyEvent event) {}, count: 1));
@@ -313,7 +357,9 @@ void main() {
       inbox.connect();
     });
 
-    test('init and connect a notifier', () {
+    test('init and connect a notifier', () async {
+      kabelwerk = await setUpKabelwerk();
+
       final notifier = kabelwerk.openNotifier();
 
       notifier.on(
@@ -325,7 +371,9 @@ void main() {
       notifier.connect();
     });
 
-    test('init and connect a room', () {
+    test('init and connect a room', () async {
+      kabelwerk = await setUpKabelwerk();
+
       final room = kabelwerk.openRoom(18);
 
       room.on(
@@ -337,7 +385,9 @@ void main() {
       room.connect();
     });
 
-    test('init and connect a room, without an id', () {
+    test('init and connect a room, without an id', () async {
+      kabelwerk = await setUpKabelwerk();
+
       final room = kabelwerk.openRoom();
 
       room.on(

@@ -18,8 +18,16 @@ import './room.dart';
 /// Kabelwerk backend; it is also used for retrieving and updating the
 /// connected user's info, opening inboxes, and creating and opening rooms.
 class Kabelwerk {
+  //
+  // public variables
+  //
+
   /// The current configuration.
   final config = Config();
+
+  //
+  // private variables
+  //
 
   final _dispatcher = Dispatcher([
     'error',
@@ -29,20 +37,28 @@ class Kabelwerk {
     'user_updated',
   ]);
 
-  Connector? _connector;
-
+  late final Connector _connector;
   late final PhoenixChannel _channel;
+
+  bool _connectHasBeenCalled = false;
   bool _ready = false;
 
   User? _user;
+
+  //
+  // constructors
+  //
+
+  Kabelwerk() {
+    _connector = Connector(config, _dispatcher);
+  }
 
   //
   // getters
   //
 
   /// The current connection state.
-  ConnectionState get state =>
-      (_connector != null) ? _connector!.state : ConnectionState.inactive;
+  ConnectionState get state => _connector.state;
 
   /// The connected user.
   User get user {
@@ -67,7 +83,7 @@ class Kabelwerk {
   }
 
   void _setUpChannel() {
-    _channel = _connector!.socket
+    _channel = _connector.socket
         .addChannel(topic: 'private', parameters: _getChannelJoinParameters());
 
     _channel.messages.listen((phoenix.Message message) {
@@ -129,16 +145,16 @@ class Kabelwerk {
   /// carried out. However, note that connection may not always succeed on the
   /// first attempt — for state changes, do rely on the events instead.
   Future<PhoenixSocket?> connect() {
-    if (_connector != null) {
-      throw StateError('Kabelwerk is already ${_connector!.state}.');
+    if (_connectHasBeenCalled != false) {
+      throw StateError('Kabelwerk is already ${_connector.state}.');
     }
 
-    _connector = Connector(config, _dispatcher);
-    _connector!.prepareSocket();
+    _connectHasBeenCalled = true;
 
+    _connector.prepareSocket();
     _setUpChannel();
 
-    return _connector!.connect();
+    return _connector.connect();
   }
 
   /// Creates a chat room between the connected user and a hub.
@@ -166,13 +182,10 @@ class Kabelwerk {
 
   /// Closes the connection to the server.
   void disconnect() {
-    _channel.leave();
-
-    _connector?.disconnect();
-    _connector = null;
-
-    _user = null;
-    _ready = false;
+    if (_connectHasBeenCalled == true) {
+      _channel.leave();
+      _connector.disconnect();
+    }
   }
 
   /// Removes one or more previously attached event listeners.
@@ -201,14 +214,14 @@ class Kabelwerk {
   Inbox openInbox() {
     _ensureReady();
 
-    return Inbox(_connector!, _user!.id);
+    return Inbox(_connector, _user!.id);
   }
 
   /// Initialises and returns a [Notifier] instance.
   Notifier openNotifier() {
     _ensureReady();
 
-    return Notifier(_connector!, _user!.id);
+    return Notifier(_connector, _user!.id);
   }
 
   /// Initialises and returns a [Room] instance for the chat room with the
@@ -220,7 +233,7 @@ class Kabelwerk {
   Room openRoom([int roomId = 0]) {
     _ensureReady();
 
-    return Room(_connector!, roomId);
+    return Room(_connector, roomId);
   }
 
   /// Sets and/or updates the push notifications settings for the currently
