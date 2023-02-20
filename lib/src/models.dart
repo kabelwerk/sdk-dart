@@ -245,6 +245,23 @@ class InboxItem extends Equatable {
 // private models
 //
 
+/// The response of a successful private channel join.
+class PrivateJoin extends Equatable {
+  /// A list of the IDs of the connected user's rooms.
+  final List<int> roomIds;
+
+  /// The connected user.
+  final User user;
+
+  /// Creates a private join.
+  PrivateJoin.fromPayload(Map<String, dynamic> data)
+      : roomIds = List.unmodifiable(data['room_ids']),
+        user = User.fromPayload(data['user']);
+
+  @override
+  List<Object> get props => [roomIds, user];
+}
+
 /// The response of a successful join of a room channel.
 class RoomJoin extends Equatable {
   /// The room's custom attributes.

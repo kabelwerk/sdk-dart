@@ -10,7 +10,7 @@ import 'package:kabelwerk/src/models.dart';
 import 'helpers/setup.dart';
 
 void main() {
-  group('connection', () {
+  group('connect', () {
     late Kabelwerk kabelwerk;
 
     setUp(() {
@@ -58,26 +58,24 @@ void main() {
       kabelwerk.connect();
     });
 
-    // test('join error → error + disconnected event, inactive state', () async {
-    //   final run = await runServer([
-    //     Connect(),
-    //     Join('private', {}, {}, accept: false),
-    //   ]);
+    test('join error → error + disconnected event, inactive state', () {
+      kabelwerk.config.token = 'valid-token';
 
-    //   final kabelwerk = Kabelwerk();
-    //   kabelwerk.config.url = run.url;
-    //   kabelwerk.config.token = run.token;
+      // the test server's private channel will reject the join attempt if the
+      // ensure_rooms param is ['error']
+      kabelwerk.config.ensureRoomsOn = ['error'];
 
-    //   kabelwerk.on(
-    //       'disconnected',
-    //       expectAsync1((event) {
-    //         expect(event.runtimeType, equals(DisconnectedEvent));
+      kabelwerk.on('error', expectAsync1((ErrorEvent event) {}, count: 1));
 
-    //         expect(kabelwerk.state, equals(ConnectionState.inactive));
-    //       }, count: 1));
+      kabelwerk.on(
+          'disconnected',
+          expectAsync1((DisconnectedEvent event) {
+            expect(event.connectionState, equals(ConnectionState.inactive));
+            expect(kabelwerk.state, equals(ConnectionState.inactive));
+          }, count: 1));
 
-    //   kabelwerk.connect();
-    // });
+      kabelwerk.connect();
+    });
 
     test('join ok → ready event, online state', () {
       kabelwerk.config.token = 'valid-token';
@@ -104,35 +102,6 @@ void main() {
       kabelwerk.connect();
     });
 
-    test('ready event is emitted once', () {
-      kabelwerk.config.token = 'connect-then-disconnect';
-      kabelwerk.config.refreshToken =
-          expectAsync1((_) => Future.value('valid-token'), count: 1);
-
-      kabelwerk.on(
-          'ready',
-          expectAsync1((KabelwerkReadyEvent event) {
-            expect(kabelwerk.state, equals(ConnectionState.online));
-          }, count: 1));
-
-      kabelwerk.connect();
-    });
-
-    test('connected event is emitted each time', () {
-      kabelwerk.config.token = 'connect-then-disconnect';
-      kabelwerk.config.refreshToken =
-          expectAsync1((_) => Future.value('valid-token'), count: 1);
-
-      kabelwerk.on(
-          'connected',
-          expectAsync1((ConnectedEvent event) {
-            expect(event.connectionState, equals(ConnectionState.online));
-            expect(kabelwerk.state, equals(ConnectionState.online));
-          }, count: 2));
-
-      kabelwerk.connect();
-    });
-
     test('disconnect → disconnected event, inactive state', () async {
       kabelwerk.config.token = 'valid-token';
 
@@ -148,6 +117,56 @@ void main() {
     });
   });
 
+  group('reconnect', () {
+    late Kabelwerk kabelwerk;
+
+    setUp(() {
+      kabelwerk = Kabelwerk();
+      kabelwerk.config.url = serverUrl;
+
+      kabelwerk.config.token = 'connect-then-disconnect';
+      kabelwerk.config.refreshToken =
+          expectAsync1((_) => Future.value('valid-token'), count: 1);
+    });
+
+    tearDown(() {
+      kabelwerk.disconnect();
+    });
+
+    test('ready event is emitted once', () {
+      kabelwerk.on(
+          'ready',
+          expectAsync1((KabelwerkReadyEvent event) {
+            expect(kabelwerk.state, equals(ConnectionState.online));
+          }, count: 1));
+
+      kabelwerk.connect();
+    });
+
+    test('connected event is emitted each time', () {
+      kabelwerk.on(
+          'connected',
+          expectAsync1((ConnectedEvent event) {
+            expect(event.connectionState, equals(ConnectionState.online));
+            expect(kabelwerk.state, equals(ConnectionState.online));
+          }, count: 2));
+
+      kabelwerk.connect();
+    });
+
+    test('rejoin private channel → user_updated event', () {
+      // the private join response will triger a user_updated event regardless
+      // of whether the user name has changed
+      kabelwerk.on(
+          'user_updated',
+          expectAsync1((UserUpdatedEvent event) {
+            expect(kabelwerk.user, equals(event.user));
+          }, count: 1));
+
+      kabelwerk.connect();
+    });
+  });
+
   group('user', () {
     late Kabelwerk kabelwerk;
 
@@ -160,9 +179,8 @@ void main() {
     });
 
     test('get user', () {
-      expect(kabelwerk.user.runtimeType, equals(User));
-
-      // see test/server/lib/server_web/channels/private_channel.ex
+      // the test server's private channel returns a user with the following
+      // properties by default
       expect(kabelwerk.user.id, equals(1));
       expect(kabelwerk.user.key, equals('test_user'));
       expect(kabelwerk.user.name, equals('Test User'));
@@ -172,7 +190,6 @@ void main() {
       kabelwerk.on(
           'user_updated',
           expectAsync1((UserUpdatedEvent event) {
-            expect(event.user.runtimeType, equals(User));
             expect(event.user.id, equals(1));
             expect(event.user.key, equals('test_user'));
             expect(event.user.name, equals('Valid Name'));

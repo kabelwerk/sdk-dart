@@ -3,9 +3,19 @@ defmodule ServerWeb.PrivateChannel do
 
   alias Server.Factory
 
-  def join("private", _payload, socket) do
-    {:ok, Factory.connected_user(), socket}
+  def join("private", %{} = payload, socket) do
+    case payload do
+      %{"ensure_rooms" => ["error"]} ->
+        {:error, %{reason: "Could not ensure the requested rooms."}}
+
+      _ ->
+        {:ok, Factory.private_join(), socket}
+    end
   end
+
+  #
+  # upstream events
+  #
 
   def handle_in("update_user", %{} = payload, socket) do
     case payload do

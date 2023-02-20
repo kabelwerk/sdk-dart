@@ -30,10 +30,11 @@ class Kabelwerk {
   ]);
 
   Connector? _connector;
-  PhoenixChannel? _channel;
+
+  late final PhoenixChannel _channel;
+  bool _ready = false;
 
   User? _user;
-  bool _ready = false;
 
   //
   // getters
@@ -69,7 +70,12 @@ class Kabelwerk {
     _channel = _connector!.socket
         .addChannel(topic: 'private', parameters: _getChannelJoinParameters());
 
-    _channel!.messages.listen((phoenix.Message message) {
+    _channel.messages.listen((phoenix.Message message) {
+      if (message.event.value == 'phx_reply' &&
+          message.ref == _channel.joinRef) {
+        _handleJoinResponse(message.payload!);
+      }
+
       if (message.event.value == 'user_updated') {
         final user = User.fromPayload(message.payload!);
         _user = user;
@@ -78,28 +84,30 @@ class Kabelwerk {
     });
 
     _dispatcher.once('connected', (ConnectedEvent event) {
-      _channel!.join()
-        ..onReply('ok', (PushResponse pushResponse) {
-          final user = User.fromPayload(pushResponse.response);
-
-          if (_user != null) {
-            _dispatcher.send('user_updated', UserUpdatedEvent(user));
-          }
-
-          _user = user;
-
-          if (_ready == false) {
-            _ready = true;
-            _dispatcher.send('ready', KabelwerkReadyEvent(user));
-          }
-        })
-        ..onReply('error', (error) {
-          _dispatcher.send('error', ErrorEvent());
-        })
-        ..onReply('timeout', (error) {
-          _dispatcher.send('error', ErrorEvent());
-        });
+      _channel.join();
     });
+  }
+
+  void _handleJoinResponse(Map<String, dynamic> payload) {
+    if (payload['status'] == 'ok') {
+      final privateJoin = PrivateJoin.fromPayload(payload['response']);
+
+      if (_user != null) {
+        _dispatcher.send('user_updated', UserUpdatedEvent(privateJoin.user));
+      }
+
+      _user = privateJoin.user;
+
+      if (_ready == false) {
+        _ready = true;
+        _dispatcher.send('ready', KabelwerkReadyEvent(privateJoin.user));
+      }
+    } else {
+      _dispatcher.send('error', ErrorEvent());
+
+      // if we cannot (re)join the private channel, terminate the connection
+      disconnect();
+    }
   }
 
   void _ensureReady() {
@@ -141,7 +149,7 @@ class Kabelwerk {
 
     final Completer<int> completer = Completer();
 
-    _channel!.push('create_room', {'hub': hubId})
+    _channel.push('create_room', {'hub': hubId})
       ..onReply('ok', (PushResponse pushResponse) {
         final int roomId = pushResponse.response['id'];
         completer.complete(roomId);
@@ -158,8 +166,7 @@ class Kabelwerk {
 
   /// Closes the connection to the server.
   void disconnect() {
-    _channel?.leave();
-    _channel = null;
+    _channel.leave();
 
     _connector?.disconnect();
     _connector = null;
@@ -229,7 +236,7 @@ class Kabelwerk {
 
     final Completer<Device> completer = Completer();
 
-    _channel!.push('update_device', {
+    _channel.push('update_device', {
       'push_notifications_token': pushNotificationsToken,
       'push_notifications_enabled': pushNotificationsEnabled
     })
@@ -253,7 +260,7 @@ class Kabelwerk {
 
     final Completer<User> completer = Completer();
 
-    _channel!.push('update_user', {'name': name})
+    _channel.push('update_user', {'name': name})
       ..onReply('ok', (PushResponse pushResponse) {
         final user = User.fromPayload(pushResponse.response);
         _user = user;
