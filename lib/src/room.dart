@@ -12,10 +12,12 @@ import './models.dart';
 /// A room is where chat messages are exchanged between an end user on one side
 /// and your care team (hub users) on the other side.
 class Room {
+  //
+  // private variables
+  //
+
   final Connector _connector;
   final int _roomId;
-
-  Room(this._connector, this._roomId);
 
   final Dispatcher _dispatcher = Dispatcher([
     'error',
@@ -25,13 +27,13 @@ class Room {
     'marker_moved',
   ]);
 
-  final Map<String, int> _channelJoinParameters = Map();
+  final Map<String, int> _channelJoinParameters = {};
 
   late PhoenixChannel _channel;
   bool _connectHasBeenCalled = false;
   bool _ready = false;
 
-  final Map<String, dynamic> _attributes = Map();
+  final Map<String, dynamic> _attributes = {};
   late User _user;
 
   int _firstMessageId = -1;
@@ -39,6 +41,12 @@ class Room {
 
   late Marker? _ownMarker;
   late Marker? _theirMarker;
+
+  //
+  // constructors
+  //
+
+  Room(this._connector, this._roomId);
 
   //
   // getters
@@ -97,7 +105,7 @@ class Room {
       _updateFirstLastIds(roomJoin.messages);
 
       if (_ready == false) {
-        // first channel join
+        // initial join
 
         _ready = true;
 
@@ -109,7 +117,7 @@ class Room {
             RoomReadyEvent(
                 roomJoin.messages, roomJoin.ownMarker, roomJoin.theirMarker));
       } else {
-        // the channel was re-joined
+        // rejoin
 
         for (final message in roomJoin.messages) {
           _dispatcher.send('message_posted', MessagePostedEvent(message));
@@ -138,7 +146,7 @@ class Room {
 
   Future<PushResponse> _setUpChannel() {
     _channel = _connector.socket.addChannel(
-        topic: 'room:${_roomId}', parameters: _channelJoinParameters);
+        topic: 'room:$_roomId', parameters: _channelJoinParameters);
 
     _channel.messages.listen((phoenix.Message socketMessage) {
       if (socketMessage.event.value == 'phx_reply' &&

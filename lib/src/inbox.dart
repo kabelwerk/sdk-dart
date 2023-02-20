@@ -12,10 +12,12 @@ import './models.dart';
 /// An inbox is a view on the rooms the user has access to; it maintains a list
 /// of rooms ordered by recency of their latest message.
 class Inbox {
+  //
+  // private variables
+  //
+
   final Connector _connector;
   final int _userId;
-
-  Inbox(this._connector, this._userId);
 
   final Dispatcher _dispatcher = Dispatcher([
     'error',
@@ -23,11 +25,17 @@ class Inbox {
     'updated',
   ]);
 
-  final Map<int, InboxItem> _items = Map();
+  final Map<int, InboxItem> _items = {};
 
   late PhoenixChannel _channel;
   bool _connectHasBeenCalled = false;
   bool _ready = false;
+
+  //
+  // constructors
+  //
+
+  Inbox(this._connector, this._userId);
 
   //
   // getters
@@ -55,7 +63,7 @@ class Inbox {
   //
 
   Future<PushResponse> _setUpChannel() {
-    _channel = _connector.socket.addChannel(topic: 'user_inbox:${_userId}');
+    _channel = _connector.socket.addChannel(topic: 'user_inbox:$_userId');
 
     _channel.messages.listen((phoenix.Message message) {
       if (message.event.value == 'phx_reply' &&

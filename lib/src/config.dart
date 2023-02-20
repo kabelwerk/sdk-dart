@@ -32,7 +32,7 @@ class Config {
   /// reconnecting. If you provide both a `token` and a `refreshToken`
   /// function, then the former will be used for the initial connection, and
   /// the latter each time when reconnecting.
-  Future<String> Function(String)? refreshToken = null;
+  Future<String> Function(String)? refreshToken;
 
   /// A list of hubs on which to create rooms, if these do not exist already,
   /// for the connected user.

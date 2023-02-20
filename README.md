@@ -17,7 +17,8 @@ The entry point is to create and configure an instance of the `Kabelwerk` class,
 ```dart
 final kabelwerk = Kabelwerk();
 
-kabelwerk.config(url: url, token: token);
+kabelwerk.config.url = url;
+kabelwerk.config.token = token;
 
 kabelwerk.on('ready', (KabelwerkReadyEvent event) {
   // this event is fired once when the initial connection is established

@@ -15,7 +15,7 @@ class Dispatcher {
 
   void _checkEventName(String eventName) {
     if (!_eventNames.contains(eventName)) {
-      throw ArgumentError('Unknown event name: ${eventName}.');
+      throw ArgumentError('Unknown event name: $eventName.');
     }
   }
 

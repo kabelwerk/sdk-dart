@@ -43,7 +43,7 @@ class Kabelwerk {
   bool _connectHasBeenCalled = false;
   bool _ready = false;
 
-  User? _user;
+  late User _user;
 
   //
   // constructors
@@ -63,7 +63,7 @@ class Kabelwerk {
   /// The connected user.
   User get user {
     _ensureReady();
-    return _user!;
+    return _user;
   }
 
   //
@@ -71,11 +71,11 @@ class Kabelwerk {
   //
 
   Map<String, dynamic> _getChannelJoinParameters() {
-    Map<String, dynamic> parameters = Map();
+    Map<String, dynamic> parameters = {};
 
     if (config.ensureRoomsOnAllHubs == true) {
       parameters['ensure_rooms'] = 'all';
-    } else if (config.ensureRoomsOn.length > 0) {
+    } else if (config.ensureRoomsOn.isNotEmpty) {
       parameters['ensure_rooms'] = config.ensureRoomsOn;
     }
 
@@ -108,15 +108,15 @@ class Kabelwerk {
     if (payload['status'] == 'ok') {
       final privateJoin = PrivateJoin.fromPayload(payload['response']);
 
-      if (_user != null) {
-        _dispatcher.send('user_updated', UserUpdatedEvent(privateJoin.user));
-      }
-
       _user = privateJoin.user;
 
       if (_ready == false) {
+        // initial join
         _ready = true;
         _dispatcher.send('ready', KabelwerkReadyEvent(privateJoin.user));
+      } else {
+        // rejoin
+        _dispatcher.send('user_updated', UserUpdatedEvent(privateJoin.user));
       }
     } else {
       _dispatcher.send('error', ErrorEvent());
@@ -214,14 +214,14 @@ class Kabelwerk {
   Inbox openInbox() {
     _ensureReady();
 
-    return Inbox(_connector, _user!.id);
+    return Inbox(_connector, _user.id);
   }
 
   /// Initialises and returns a [Notifier] instance.
   Notifier openNotifier() {
     _ensureReady();
 
-    return Notifier(_connector, _user!.id);
+    return Notifier(_connector, _user.id);
   }
 
   /// Initialises and returns a [Room] instance for the chat room with the

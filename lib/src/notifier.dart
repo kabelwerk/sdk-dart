@@ -18,10 +18,12 @@ import './models.dart';
 /// temporarily drops, upon reconnecting the notifier will emit events for the
 /// messages missed while the client was disconnected.
 class Notifier {
+  //
+  // private variables
+  //
+
   final Connector _connector;
   final int _userId;
-
-  Notifier(this._connector, this._userId);
 
   final Dispatcher _dispatcher = Dispatcher([
     'error',
@@ -29,11 +31,17 @@ class Notifier {
     'updated',
   ]);
 
-  final Map<String, int> _channelJoinParameters = Map();
+  final Map<String, int> _channelJoinParameters = {};
 
   late PhoenixChannel _channel;
   bool _connectHasBeenCalled = false;
   bool _ready = false;
+
+  //
+  // constructors
+  //
+
+  Notifier(this._connector, this._userId);
 
   //
   // private methods
@@ -78,7 +86,7 @@ class Notifier {
 
   Future<PushResponse> _setUpChannel() {
     _channel = _connector.socket.addChannel(
-        topic: 'notifier:${_userId}', parameters: _channelJoinParameters);
+        topic: 'notifier:$_userId', parameters: _channelJoinParameters);
 
     _channel.messages.listen((phoenix.Message socketMessage) {
       if (socketMessage.event.value == 'phx_reply' &&

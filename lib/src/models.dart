@@ -15,7 +15,7 @@ class Hub extends Equatable {
   /// Your unique ID for this hub.
   final String slug;
 
-  /// Creates a hub.
+  /// Creates a hub from a socket message payload.
   ///
   /// The payload may be:
   ///
@@ -40,7 +40,7 @@ class User extends Equatable {
   /// The user's name.
   final String name;
 
-  /// Creates a user.
+  /// Creates a user from a socket message payload.
   ///
   /// The payload may be:
   ///
@@ -68,7 +68,7 @@ class Device extends Equatable {
   /// Whether to send push notifications to this device.
   final bool pushNotificationsEnabled;
 
-  /// Creates a device.
+  /// Creates a device from a socket message payload.
   ///
   /// The payload may be:
   ///
@@ -131,7 +131,7 @@ class Message extends Equatable {
   /// The user who posted the message.
   final User user;
 
-  /// Creates a message.
+  /// Creates a message from a socket message payload.
   ///
   /// The payload may be:
   ///
@@ -162,7 +162,7 @@ class Upload extends Equatable {
   List<Object?> get props => [];
 }
 
-/// A marker.
+/// A marker on a message in a room.
 ///
 /// A user in a non-empty chat room may also have a marker marking the message
 /// last seen by them. A marker's position is expected to be updated by the
@@ -189,7 +189,7 @@ class Marker extends Equatable {
   /// The ID of the user who moved the marker.
   final int userId;
 
-  /// Creates a marker.
+  /// Creates a marker from a socket message payload.
   ///
   /// The payload may be:
   ///
@@ -223,7 +223,7 @@ class InboxItem extends Equatable {
   /// The ID of the respective room.
   final int roomId;
 
-  /// Creates an inbox item.
+  /// Creates an inbox item from a socket message payload.
   ///
   /// The payload may be:
   ///
@@ -253,7 +253,7 @@ class PrivateJoin extends Equatable {
   /// The connected user.
   final User user;
 
-  /// Creates a private join.
+  /// Creates a private join from a socket message payload.
   PrivateJoin.fromPayload(Map<String, dynamic> data)
       : roomIds = List.unmodifiable(data['room_ids']),
         user = User.fromPayload(data['user']);
@@ -282,7 +282,7 @@ class RoomJoin extends Equatable {
   /// The room's end user.
   final User user;
 
-  /// Creates a room join.
+  /// Creates a room join from a socket message payload.
   RoomJoin.fromPayload(Map<String, dynamic> data)
       : attributes = data['attributes'],
         id = data['id'],
