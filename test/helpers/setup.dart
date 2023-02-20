@@ -5,6 +5,7 @@ import 'package:kabelwerk/src/connector.dart';
 import 'package:kabelwerk/src/dispatcher.dart';
 import 'package:kabelwerk/src/events.dart';
 import 'package:kabelwerk/src/kabelwerk.dart';
+import 'package:kabelwerk/src/room.dart';
 
 const serverUrl = 'ws://localhost:4000/socket/user/websocket';
 
@@ -43,6 +44,20 @@ Future<Kabelwerk> setUpKabelwerk() {
   });
 
   kabelwerk.connect();
+
+  return completer.future;
+}
+
+Future<Room> setUpRoom(Connector connector, {int roomId = 0}) {
+  final Completer<Room> completer = Completer();
+
+  final room = Room(connector, roomId);
+
+  room.on('ready', (RoomReadyEvent event) {
+    completer.complete(room);
+  });
+
+  room.connect();
 
   return completer.future;
 }

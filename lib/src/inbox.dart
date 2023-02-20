@@ -54,7 +54,7 @@ class Inbox {
   // private methods
   //
 
-  Future<PushResponse> _setupChannel() {
+  Future<PushResponse> _setUpChannel() {
     _channel = _connector.socket.addChannel(topic: 'user_inbox:${_userId}');
 
     _channel.messages.listen((phoenix.Message message) {
@@ -121,7 +121,7 @@ class Inbox {
 
     _connectHasBeenCalled = true;
 
-    return _setupChannel();
+    return _setUpChannel();
   }
 
   /// Closes the connection to the server.

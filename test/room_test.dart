@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:test/test.dart';
 
 import 'package:kabelwerk/src/connector.dart';
@@ -10,36 +8,21 @@ import 'package:kabelwerk/src/room.dart';
 import 'helpers/setup.dart';
 
 void main() {
-  late Connector connector;
-  late Room room;
+  group('connect', () {
+    late Connector connector;
 
-  setUp(() async {
-    connector = await setUpConnector();
-  });
-
-  tearDown(() {
-    connector.disconnect();
-  });
-
-  Future<Room> setUpRoom({int roomId = 0}) {
-    final Completer<Room> completer = Completer();
-
-    final room = Room(connector, roomId);
-
-    room.on('ready', (RoomReadyEvent event) {
-      completer.complete(room);
+    setUp(() async {
+      connector = await setUpConnector();
     });
 
-    room.connect();
+    tearDown(() {
+      connector.disconnect();
+    });
 
-    return completer.future;
-  }
-
-  group('connect', () {
     test('join error → error event', () {
       // the test server's room channel rejects join attempts when the room id
       // is negative
-      room = Room(connector, -1);
+      final room = Room(connector, -1);
 
       room.on('error', expectAsync1((ErrorEvent event) {}, count: 1));
 
@@ -47,7 +30,7 @@ void main() {
     });
 
     test('join ok → ready event', () {
-      room = Room(connector, 1);
+      final room = Room(connector, 1);
 
       room.on(
           'ready',
@@ -61,7 +44,7 @@ void main() {
     });
 
     test('call connect twice → state error', () {
-      room = Room(connector, 1);
+      final room = Room(connector, 1);
 
       room.connect();
 
@@ -69,9 +52,113 @@ void main() {
     });
   });
 
-  group('load earlier messages', () {
+  group('reconnect', () {
+    late Connector connector;
+    late Room room;
+
+    setUp(() async {
+      connector = await setUpConnector(
+          token: 'connect-then-disconnect',
+          refreshToken: (_) => Future.value('valid-token'));
+    });
+
     tearDown(() {
       room.disconnect();
+      connector.disconnect();
+    });
+
+    test('no new messages or markers while reconnecting', () {
+      room = Room(connector, 42);
+
+      // this also verifies that the ready event is not emitted more than once
+      room.on(
+          'ready',
+          expectAsync1((RoomReadyEvent event) {
+            expect(event.messages.length, equals(42));
+          }, count: 1));
+
+      room.on('message_posted',
+          expectAsync1((MessagePostedEvent event) {}, count: 0));
+
+      room.on(
+          'marker_moved', expectAsync1((MarkerMovedEvent event) {}, count: 0));
+
+      room.connect();
+    });
+
+    test('new message while reconnecting', () {
+      // the test server's room channel generates another message at rejoin if
+      // the room id is 43
+      room = Room(connector, 43);
+
+      room.on(
+          'ready',
+          expectAsync1((RoomReadyEvent event) {
+            expect(event.messages.length, equals(43));
+          }, count: 1));
+
+      room.on(
+          'message_posted',
+          expectAsync1((MessagePostedEvent event) {
+            expect(event.message.id, equals(44));
+          }, count: 1));
+
+      room.connect();
+    });
+
+    test('multiple new messages while reconnecting', () {
+      // the test server's room channel generates another couple of message at
+      // rejoin if the room id is 44
+      room = Room(connector, 44);
+
+      room.on(
+          'ready',
+          expectAsync1((RoomReadyEvent event) {
+            expect(event.messages.length, equals(44));
+          }, count: 1));
+
+      room.on('message_posted',
+          expectAsync1((MessagePostedEvent event) {}, count: 2));
+
+      room.connect();
+    });
+
+    test('marker moved while reconnecting', () {
+      // the test server's room channel returns an updated marker at rejoin if
+      // the room id is 45
+      room = Room(connector, 45);
+
+      room.on(
+          'ready',
+          expectAsync1((RoomReadyEvent event) {
+            expect(event.messages.length, equals(45));
+          }, count: 1));
+
+      room.on('message_posted',
+          expectAsync1((MessagePostedEvent event) {}, count: 0));
+
+      room.on(
+          'marker_moved',
+          expectAsync1((MarkerMovedEvent event) {
+            expect(event.marker.messageId, equals(45));
+            expect(room.ownMarker, equals(event.marker));
+          }, count: 1));
+
+      room.connect();
+    });
+  });
+
+  group('load earlier messages', () {
+    late Connector connector;
+    late Room room;
+
+    setUp(() async {
+      connector = await setUpConnector();
+    });
+
+    tearDown(() {
+      room.disconnect();
+      connector.disconnect();
     });
 
     test('call loadEarlier too early → state error', () {
@@ -81,7 +168,7 @@ void main() {
     });
 
     test('0 messages', () async {
-      room = await setUpRoom(roomId: 0);
+      room = await setUpRoom(connector, roomId: 0);
 
       // no more messages to load
       final List<Message> messages = await room.loadEarlier();
@@ -89,7 +176,7 @@ void main() {
     });
 
     test('201 messages', () async {
-      room = await setUpRoom(roomId: 201);
+      room = await setUpRoom(connector, roomId: 201);
 
       // load messages 101-200
       final List<Message> messages1 = await room.loadEarlier();
@@ -110,8 +197,16 @@ void main() {
   });
 
   group('post message', () {
+    late Connector connector;
+    late Room room;
+
+    setUp(() async {
+      connector = await setUpConnector();
+    });
+
     tearDown(() {
       room.disconnect();
+      connector.disconnect();
     });
 
     test('call postMessage too early → state error', () {
@@ -121,7 +216,7 @@ void main() {
     });
 
     test('post_message error → future rejected', () async {
-      room = await setUpRoom();
+      room = await setUpRoom(connector);
 
       final future = room.postMessage(text: "");
 
@@ -131,7 +226,7 @@ void main() {
     });
 
     test('post_message ok → future resolves, message_posted event', () async {
-      room = await setUpRoom();
+      room = await setUpRoom(connector);
 
       room.on(
           'message_posted',
@@ -150,8 +245,16 @@ void main() {
   });
 
   group('delete message', () {
+    late Connector connector;
+    late Room room;
+
+    setUp(() async {
+      connector = await setUpConnector();
+    });
+
     tearDown(() {
       room.disconnect();
+      connector.disconnect();
     });
 
     test('call deleteMessage too early → state error', () {
@@ -161,7 +264,7 @@ void main() {
     });
 
     test('delete_message error → future rejected', () async {
-      room = await setUpRoom(roomId: 1);
+      room = await setUpRoom(connector, roomId: 1);
 
       // see test/server/lib/server_web/channels/room_channel.ex
       // IDs of messages not in the room result in errors
@@ -174,7 +277,7 @@ void main() {
 
     test('delete_message ok → future resolves, message_deleted event',
         () async {
-      room = await setUpRoom(roomId: 1);
+      room = await setUpRoom(connector, roomId: 1);
 
       room.on(
           'message_deleted',
@@ -193,8 +296,16 @@ void main() {
   });
 
   group('move marker', () {
+    late Connector connector;
+    late Room room;
+
+    setUp(() async {
+      connector = await setUpConnector();
+    });
+
     tearDown(() {
       room.disconnect();
+      connector.disconnect();
     });
 
     test('call moveMarker too early → state error', () {
@@ -204,13 +315,13 @@ void main() {
     });
 
     test('call moveMarker in a room without messages → state error', () async {
-      room = await setUpRoom(roomId: 0);
+      room = await setUpRoom(connector, roomId: 0);
 
       expect(() => room.moveMarker(), throwsStateError);
     });
 
     test('move_marker error → future rejected', () async {
-      room = await setUpRoom(roomId: 1);
+      room = await setUpRoom(connector, roomId: 1);
 
       // see test/server/lib/server_web/channels/room_channel.ex
       // non-positive message IDs result in errors
@@ -222,7 +333,7 @@ void main() {
     });
 
     test('move_marker ok → future resolves, marker_moved event', () async {
-      room = await setUpRoom(roomId: 1);
+      room = await setUpRoom(connector, roomId: 1);
 
       room.on(
           'marker_moved',
@@ -245,8 +356,16 @@ void main() {
   });
 
   group('attributes', () {
+    late Connector connector;
+    late Room room;
+
+    setUp(() async {
+      connector = await setUpConnector();
+    });
+
     tearDown(() {
       room.disconnect();
+      connector.disconnect();
     });
 
     test('call attributes too early → state error', () {
@@ -262,7 +381,7 @@ void main() {
     });
 
     test('set_attributes error → future rejected', () async {
-      room = await setUpRoom();
+      room = await setUpRoom(connector);
 
       final future = room.updateAttributes({'valid': false});
 
@@ -274,7 +393,7 @@ void main() {
     });
 
     test('set_attributes ok → future resolves, attributes updated', () async {
-      room = await setUpRoom();
+      room = await setUpRoom(connector);
 
       final newAttributes = {'valid': true, 'answer': 42};
       final future = room.updateAttributes(newAttributes);
@@ -289,8 +408,16 @@ void main() {
   });
 
   group('user', () {
+    late Connector connector;
+    late Room room;
+
+    setUp(() async {
+      connector = await setUpConnector();
+    });
+
     tearDown(() {
       room.disconnect();
+      connector.disconnect();
     });
 
     test('call user too early → state error', () {
@@ -300,7 +427,7 @@ void main() {
     });
 
     test('get room user', () async {
-      room = await setUpRoom();
+      room = await setUpRoom(connector);
 
       // see test/server/lib/server/factory.ex
       expect(room.user.id, equals(1));

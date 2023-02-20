@@ -3,7 +3,7 @@ defmodule ServerWeb.RoomChannel do
 
   alias Server.Factory
 
-  def join("room:" <> room_id, %{} = _payload, socket) do
+  def join("room:" <> room_id, %{} = payload, socket) do
     {room_id, ""} = Integer.parse(room_id)
 
     if room_id >= 0 do
@@ -11,24 +11,60 @@ defmodule ServerWeb.RoomChannel do
         Range.new(1, room_id, 1)
         |> Enum.map(fn i -> Factory.message(room_id: room_id, id: i) end)
 
-      initial_messages =
-        all_messages
-        |> Enum.reverse()
-        |> Enum.slice(0, 100)
-        |> Enum.reverse()
-
       socket =
         socket
         |> assign(:room_id, room_id)
         |> assign(:messages, all_messages)
 
-      output = Factory.room_join(id: room_id, messages: initial_messages)
+      output =
+        Factory.room_join(
+          id: room_id,
+          messages: messages_at_join(room_id, all_messages, payload),
+          markers: markers_at_join(room_id, payload)
+        )
 
       {:ok, output, socket}
     else
       {:error, %{reason: "Unauthorized."}}
     end
   end
+
+  defp messages_at_join(room_id, all_messages, join_payload) do
+    messages =
+      all_messages
+      |> Enum.reverse()
+      |> Enum.slice(0, 100)
+      |> Enum.reverse()
+
+    case join_payload do
+      %{"after" => 43} ->
+        [Factory.message(id: 44, room_id: room_id)]
+
+      %{"after" => 44} ->
+        Range.new(45, 46, 1)
+        |> Enum.map(fn i -> Factory.message(id: i, room_id: room_id) end)
+
+      %{"after" => after_message_id} ->
+        Enum.filter(messages, fn message -> message.id > after_message_id end)
+
+      %{} ->
+        messages
+    end
+  end
+
+  defp markers_at_join(room_id, join_payload) do
+    case join_payload do
+      %{"after" => 45} ->
+        [Factory.marker(room_id: room_id, message_id: 45), nil]
+
+      %{} ->
+        [nil, nil]
+    end
+  end
+
+  #
+  # upstream events
+  #
 
   def handle_in("list_messages", %{"before" => before}, socket) when is_integer(before) do
     messages =

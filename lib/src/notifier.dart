@@ -55,7 +55,7 @@ class Notifier {
     }
   }
 
-  void _handleJoinResponse(Map payload) {
+  void _handleJoinResponse(Map<String, dynamic> payload) {
     if (payload['status'] == 'ok') {
       final List<Message> messages = List.unmodifiable(payload['response']
               ['messages']

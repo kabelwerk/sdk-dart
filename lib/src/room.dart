@@ -1,6 +1,8 @@
 import 'dart:async';
 
-import 'package:phoenix_socket/phoenix_socket.dart' hide Message;
+import 'package:phoenix_socket/phoenix_socket.dart'
+    show PhoenixChannel, PushResponse;
+import 'package:phoenix_socket/phoenix_socket.dart' as phoenix show Message;
 
 import './connector.dart';
 import './dispatcher.dart';
@@ -22,6 +24,8 @@ class Room {
     'message_deleted',
     'marker_moved',
   ]);
+
+  final Map<String, int> _channelJoinParameters = Map();
 
   late PhoenixChannel _channel;
   bool _connectHasBeenCalled = false;
@@ -76,19 +80,78 @@ class Room {
 
       if (messages.last.id > _lastMessageId) {
         _lastMessageId = messages.last.id;
+        _channelJoinParameters['after'] = _lastMessageId;
       }
     }
   }
 
-  void _setupChannel() {
-    _channel = _connector.socket.addChannel(topic: 'room:${_roomId}');
+  void _handleJoinResponse(Map<String, dynamic> payload) {
+    if (payload['status'] == 'ok') {
+      final roomJoin = RoomJoin.fromPayload(payload['response']);
 
-    _channel.messages.listen((socketMessage) {
+      _attributes.clear();
+      _attributes.addAll(roomJoin.attributes);
+
+      _user = roomJoin.user;
+
+      _updateFirstLastIds(roomJoin.messages);
+
+      if (_ready == false) {
+        // first channel join
+
+        _ready = true;
+
+        _ownMarker = roomJoin.ownMarker;
+        _theirMarker = roomJoin.theirMarker;
+
+        _dispatcher.send(
+            'ready',
+            RoomReadyEvent(
+                roomJoin.messages, roomJoin.ownMarker, roomJoin.theirMarker));
+      } else {
+        // the channel was re-joined
+
+        for (final message in roomJoin.messages) {
+          _dispatcher.send('message_posted', MessagePostedEvent(message));
+        }
+
+        if (roomJoin.ownMarker != null &&
+            (_ownMarker == null ||
+                _ownMarker!.messageId < roomJoin.ownMarker!.messageId)) {
+          _ownMarker = roomJoin.ownMarker;
+          _dispatcher.send(
+              'marker_moved', MarkerMovedEvent(roomJoin.ownMarker!));
+        }
+
+        if (roomJoin.theirMarker != null &&
+            (_theirMarker == null ||
+                _theirMarker!.messageId < roomJoin.theirMarker!.messageId)) {
+          _theirMarker = roomJoin.theirMarker;
+          _dispatcher.send(
+              'marker_moved', MarkerMovedEvent(roomJoin.theirMarker!));
+        }
+      }
+    } else {
+      _dispatcher.send('error', ErrorEvent());
+    }
+  }
+
+  Future<PushResponse> _setUpChannel() {
+    _channel = _connector.socket.addChannel(
+        topic: 'room:${_roomId}', parameters: _channelJoinParameters);
+
+    _channel.messages.listen((phoenix.Message socketMessage) {
+      if (socketMessage.event.value == 'phx_reply' &&
+          socketMessage.ref == _channel.joinRef) {
+        _handleJoinResponse(socketMessage.payload!);
+      }
+
       if (socketMessage.event.value == 'message_posted') {
         final message = Message.fromPayload(socketMessage.payload!);
 
         if (message.id > _lastMessageId) {
           _lastMessageId = message.id;
+          _channelJoinParameters['after'] = _lastMessageId;
         }
 
         _dispatcher.send('message_posted', MessagePostedEvent(message));
@@ -114,59 +177,7 @@ class Room {
       }
     });
 
-    _channel.join()
-      ..onReply('ok', (PushResponse pushResponse) {
-        final roomJoin = RoomJoin.fromPayload(pushResponse.response);
-
-        _attributes.clear();
-        _attributes.addAll(roomJoin.attributes);
-
-        _user = roomJoin.user;
-
-        _updateFirstLastIds(roomJoin.messages);
-
-        if (_ready == false) {
-          // first channel join
-
-          _ready = true;
-
-          _ownMarker = roomJoin.ownMarker;
-          _theirMarker = roomJoin.theirMarker;
-
-          _dispatcher.send(
-              'ready',
-              RoomReadyEvent(
-                  roomJoin.messages, roomJoin.ownMarker, roomJoin.theirMarker));
-        } else {
-          // the channel was re-joined
-
-          for (final message in roomJoin.messages) {
-            _dispatcher.send('message_posted', MessagePostedEvent(message));
-          }
-
-          if (roomJoin.ownMarker != null &&
-              (_ownMarker == null ||
-                  _ownMarker!.messageId < roomJoin.ownMarker!.messageId)) {
-            _ownMarker = roomJoin.ownMarker;
-            _dispatcher.send(
-                'marker_moved', MarkerMovedEvent(roomJoin.ownMarker!));
-          }
-
-          if (roomJoin.theirMarker != null &&
-              (_theirMarker == null ||
-                  _theirMarker!.messageId < roomJoin.theirMarker!.messageId)) {
-            _theirMarker = roomJoin.theirMarker;
-            _dispatcher.send(
-                'marker_moved', MarkerMovedEvent(roomJoin.theirMarker!));
-          }
-        }
-      })
-      ..onReply('error', (error) {
-        _dispatcher.send('error', ErrorEvent());
-      })
-      ..onReply('timeout', (error) {
-        _dispatcher.send('error', ErrorEvent());
-      });
+    return _channel.join().future;
   }
 
   void _ensureReady() {
@@ -183,14 +194,20 @@ class Room {
   ///
   /// Usually all event listeners should be already attached when this method
   /// is invoked.
-  void connect() {
+  ///
+  /// Returns a [Future] which resolves when the first connection attempt is
+  /// carried out. However, note that connection may not always succeed on the
+  /// first attempt — for state changes, do rely on the [RoomReadyEvent] and
+  /// the other room events instead.
+  Future<PushResponse> connect() {
     if (_connectHasBeenCalled != false) {
       throw StateError(
           "This Room instance's .connect() method was already called once.");
     }
 
     _connectHasBeenCalled = true;
-    _setupChannel();
+
+    return _setUpChannel();
   }
 
   /// Deletes a message from the room.
@@ -225,11 +242,6 @@ class Room {
     if (_connectHasBeenCalled == true) {
       _channel.leave();
     }
-
-    _attributes.clear();
-    _firstMessageId = -1;
-    _lastMessageId = -1;
-    _ready = false;
   }
 
   /// Loads more messages from earlier in the chat history.
@@ -340,6 +352,7 @@ class Room {
 
         if (message.id > _lastMessageId) {
           _lastMessageId = message.id;
+          _channelJoinParameters['after'] = _lastMessageId;
         }
 
         completer.complete(message);
