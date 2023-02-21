@@ -82,6 +82,7 @@ class Connector {
       }).catchError((error) {
         state = ConnectionState.inactive;
         _dispatcher.send('error', ErrorEvent());
+        return null;
       });
     }
 
