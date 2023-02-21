@@ -17,6 +17,19 @@ import './models.dart';
 /// messages authored by the latter). In case the websocket connection
 /// temporarily drops, upon reconnecting the notifier will emit events for the
 /// messages missed while the client was disconnected.
+///
+///
+/// ## List of events
+///
+/// - **`error`** → Fired when there is a problem establishing connection to
+/// the server. The attached event listeners are called with an [ErrorEvent]
+/// instance.
+/// - **`ready`** → Fired at most once, when the connection to the server is
+/// first established. The attached event listeners are called with a
+/// [NotifierReadyEvent] instance.
+/// - **`updated`** → Fired when there is a new message posted in any of the
+/// rooms that the connected user has access to. The attached event listeners
+/// are called with a [NotifierUpdatedEvent] instance.
 class Notifier {
   //
   // private variables

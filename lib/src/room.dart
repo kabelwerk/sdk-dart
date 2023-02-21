@@ -11,6 +11,25 @@ import './models.dart';
 
 /// A room is where chat messages are exchanged between an end user on one side
 /// and your care team (hub users) on the other side.
+///
+///
+/// ## List of events
+///
+/// - **`error`** → Fired when there is a problem establishing connection to
+/// the server. The attached event listeners are called with an [ErrorEvent]
+/// instance.
+/// - **`ready`** → Fired at most once, when the connection to the server is
+/// first established. The attached event listeners are called with a
+/// [RoomReadyEvent] instance.
+/// - **`message_posted`** → Fired when there is a new message posted in the
+/// room (by any user). The attached event listeners are called with a
+/// [MessagePostedEvent] instance.
+/// - **`message_deleted`** → Fired when a message is deleted from the room (by
+/// any user). The attached event listeners are called with a
+/// [MessageDeletedEvent] instance.
+/// - **`marker_moved`** → Fired when a marker in the room is updated or
+/// created (by any user). The attached event listeners are called with a
+/// [MarkerMovedEvent] instance.
 class Room {
   //
   // private variables
@@ -145,8 +164,8 @@ class Room {
   }
 
   Future<PushResponse> _setUpChannel() {
-    _channel = _connector.socket.addChannel(
-        topic: 'room:$_roomId', parameters: _channelJoinParameters);
+    _channel = _connector.socket
+        .addChannel(topic: 'room:$_roomId', parameters: _channelJoinParameters);
 
     _channel.messages.listen((phoenix.Message socketMessage) {
       if (socketMessage.event.value == 'phx_reply' &&

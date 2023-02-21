@@ -11,6 +11,18 @@ import './models.dart';
 
 /// An inbox is a view on the rooms the user has access to; it maintains a list
 /// of rooms ordered by recency of their latest message.
+///
+///
+/// ## List of events
+///
+/// - **`error`** → Fired when there is a problem establishing connection to
+/// the server. The attached event listeners are called with an [ErrorEvent]
+/// instance.
+/// - **`ready`** → Fired at most once, when the connection to the server is
+/// first established. The attached event listeners are called with an
+/// [InboxReadyEvent] instance.
+/// - **`updated`** → Fired when any of the inbox items changes. The attached
+/// event listeners are called with an [InboxUpdatedEvent] instance.
 class Inbox {
   //
   // private variables

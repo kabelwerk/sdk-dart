@@ -16,7 +16,29 @@ import './room.dart';
 
 /// A Kabelwerk instance opens and maintains a websocket connection to the
 /// Kabelwerk backend; it is also used for retrieving and updating the
-/// connected user's info, opening inboxes, and creating and opening rooms.
+/// connected user's info, opening inboxes and notifiers, and creating and
+/// opening rooms.
+///
+///
+/// ## List of events
+///
+/// - **`error`** → Fired when there is a problem establishing connection to
+/// the server. The attached event listeners are called with an [ErrorEvent]
+/// instance.
+/// - **`ready`** → Fired when the connection to the server is first
+/// established and the Kabelwerk instance is ready to be used. The attached
+/// event listeners are called with a [KabelwerkReadyEvent] instance.
+/// - **`connected`** → Fired when the connection to the server is established.
+/// This could be either because [connect] was invoked, or it could be due to
+/// automatically re-establishing the connection after a connection drop.
+/// Useful for displaying the connection's status to the user. The attached
+/// event listeners are called with a [ConnectedEvent] instance.
+/// - **`disconnected`** → Fired when the connection to the server is dropped.
+/// Useful for displaying the connection's status to the user. The attached
+/// event listeners are called with a [DisconnectedEvent] instance.
+/// - **`user_updated`** → Fired when the connected user's name has changed.
+/// The attached event listeners are called with an [UserUpdatedEvent]
+/// instance.
 class Kabelwerk {
   //
   // public variables
