@@ -1,21 +1,49 @@
-import 'package:phoenix_socket/phoenix_socket.dart';
+import 'package:logging/logging.dart';
+import 'package:phoenix_socket/phoenix_socket.dart'
+    show
+        PhoenixSocket,
+        PhoenixSocketOptions,
+        PhoenixSocketErrorEvent,
+        PhoenixSocketOpenEvent,
+        PhoenixSocketCloseEvent;
 
 import './config.dart';
 import './connection_state.dart';
 import './dispatcher.dart';
 import './events.dart';
 
+final _logger = Logger('kabelwerk.connector');
+
 class Connector {
+  //
+  // public variables
+  //
+
+  /// The current connection state.
+  ConnectionState state = ConnectionState.inactive;
+
+  /// The phoenix_socket socket.
+  late final PhoenixSocket socket;
+
+  //
+  // private variables
+  //
+
   final Config _config;
   final Dispatcher _dispatcher;
 
-  Connector(this._config, this._dispatcher);
-
-  ConnectionState state = ConnectionState.inactive;
-  late PhoenixSocket socket;
-
   String _token = '';
   bool _tokenIsRefreshing = false;
+
+  //
+  // constructors
+  //
+
+  Connector(this._config, this._dispatcher);
+
+  //
+  // private methods
+  //
 
   Future<Map<String, String>> _getParams() async {
     return {
@@ -24,17 +52,26 @@ class Connector {
     };
   }
 
-  // Inits the socket and attaches the event listeners.
+  //
+  // public methods
+  //
+
+  /// Inits the socket and attaches the event listeners.
   void prepareSocket() {
     socket = PhoenixSocket(_config.url,
         socketOptions: PhoenixSocketOptions(dynamicParams: _getParams));
 
     socket.openStream.listen((PhoenixSocketOpenEvent event) {
+      _logger.info('Socket connection opened.');
+
       state = ConnectionState.online;
+
       _dispatcher.send('connected', ConnectedEvent(state));
     });
 
     socket.closeStream.listen((PhoenixSocketCloseEvent event) {
+      _logger.info('Socket connection closed.', event);
+
       if (state != ConnectionState.inactive) {
         state = ConnectionState.connecting;
       }
@@ -47,20 +84,25 @@ class Connector {
         _tokenIsRefreshing = true;
 
         _config.refreshToken!(_token).then((String newToken) {
+          _logger.info('Auth token refreshed.');
+
           _token = newToken;
           _tokenIsRefreshing = false;
         }).catchError((error) {
+          _logger.severe('Failed to refresh the auth token.', error);
+
           _tokenIsRefreshing = false;
         });
       }
     });
 
     socket.errorStream.listen((PhoenixSocketErrorEvent event) {
+      _logger.severe('Socket connection error.', event);
       _dispatcher.send('error', ErrorEvent());
     });
   }
 
-  // Sets the initial _token and calls socket.connect().
+  /// Sets the initial auth token and calls socket.connect().
   Future<PhoenixSocket?> connect() {
     _token = _config.token;
 
@@ -68,6 +110,7 @@ class Connector {
     // whether it is also configured with a refreshToken function
     if (_token != '') {
       state = ConnectionState.connecting;
+
       return socket.connect();
     }
 
@@ -77,11 +120,17 @@ class Connector {
       state = ConnectionState.connecting;
 
       return _config.refreshToken!(_token).then((String newToken) {
+        _logger.info('Auth token obtained.');
+
         _token = newToken;
+
         return socket.connect();
       }).catchError((error) {
+        _logger.severe('Failed to obtain an auth token.', error);
+
         state = ConnectionState.inactive;
         _dispatcher.send('error', ErrorEvent());
+
         return null;
       });
     }
