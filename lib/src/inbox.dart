@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:logging/logging.dart';
 import 'package:phoenix_socket/phoenix_socket.dart'
     show PhoenixChannel, PushResponse;
 import 'package:phoenix_socket/phoenix_socket.dart' as phoenix show Message;
@@ -8,6 +9,8 @@ import './connector.dart';
 import './dispatcher.dart';
 import './events.dart';
 import './models.dart';
+
+final _logger = Logger('kabelwerk.inbox');
 
 /// An inbox is a view on the rooms the user has access to; it maintains a list
 /// of rooms ordered by recency of their latest message.
@@ -47,6 +50,7 @@ class Inbox {
   // constructors
   //
 
+  /// Do not create instances directly — use [Kabelwerk.openInbox] instead.
   Inbox(this._connector, this._userId);
 
   //
@@ -81,8 +85,10 @@ class Inbox {
       if (message.event.value == 'phx_reply' &&
           message.ref == _channel.joinRef) {
         if (message.payload!['status'] == 'ok') {
+          _logger.info('Joined the ${_channel.topic} channel.');
           _loadItemsOnJoin();
         } else {
+          _logger.severe('Failed to join the ${_channel.topic} channel.');
           _dispatcher.send('error', ErrorEvent());
         }
       }
@@ -112,10 +118,11 @@ class Inbox {
           _dispatcher.send('updated', InboxUpdatedEvent(items));
         }
       })
-      ..onReply('error', (error) {
+      ..onReply('error', (PushResponse error) {
+        _logger.severe('Failed to retrieve the inbox items.', error);
         _dispatcher.send('error', ErrorEvent());
       })
-      ..onReply('timeout', (error) {
+      ..onReply('timeout', (PushResponse error) {
         _dispatcher.send('error', ErrorEvent());
       });
   }
@@ -166,10 +173,11 @@ class Inbox {
 
         completer.complete(items);
       })
-      ..onReply('error', (error) {
+      ..onReply('error', (PushResponse error) {
+        _logger.severe('Failed to load more inbox items.', error);
         completer.completeError(ErrorEvent());
       })
-      ..onReply('timeout', (error) {
+      ..onReply('timeout', (PushResponse error) {
         completer.completeError(ErrorEvent());
       });
 
