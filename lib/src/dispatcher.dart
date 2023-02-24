@@ -1,3 +1,7 @@
+import 'package:logging/logging.dart';
+
+final _logger = Logger('kabelwerk.dispatcher');
+
 class Callback {
   final String reference;
   final String event;
@@ -7,11 +11,23 @@ class Callback {
 }
 
 class Dispatcher {
+  //
+  // private variables
+  //
+
   final List<String> _eventNames;
   final List<Callback> _callbacks = [];
   int _lastReference = -1;
 
+  //
+  // constructors
+  //
+
   Dispatcher(this._eventNames);
+
+  //
+  // private methods
+  //
 
   void _checkEventName(String eventName) {
     if (!_eventNames.contains(eventName)) {
@@ -23,11 +39,17 @@ class Dispatcher {
     return (++_lastReference).toString();
   }
 
+  //
+  // public methods
+  //
+
   /// Emits an event.
   ///
   /// Invoke the callbacks registered for the event with the given params.
   void send(String event, dynamic params) {
     _checkEventName(event);
+
+    _logger.fine('Emitting an $event event.', params);
 
     // separate list to prevent concurrent modification of _callbacks because
     // of one-time callbacks
