@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:logging/logging.dart';
 import 'package:phoenix_socket/phoenix_socket.dart'
     show PhoenixChannel, PushResponse;
 import 'package:phoenix_socket/phoenix_socket.dart' as phoenix show Message;
@@ -8,6 +9,8 @@ import './connector.dart';
 import './dispatcher.dart';
 import './events.dart';
 import './models.dart';
+
+final _logger = Logger('kabelwerk.notifier');
 
 /// A notifier emits events intended to be used for implementing client-side
 /// notifications.
@@ -54,6 +57,7 @@ class Notifier {
   // constructors
   //
 
+  /// Do not create instances directly — use [Kabelwerk.openNotifier] instead.
   Notifier(this._connector, this._userId);
 
   //
@@ -78,6 +82,8 @@ class Notifier {
 
   void _handleJoinResponse(Map<String, dynamic> payload) {
     if (payload['status'] == 'ok') {
+      _logger.info('Joined the notifier:$_userId channel.');
+
       final List<Message> messages = List.unmodifiable(payload['response']
               ['messages']
           .map((item) => Message.fromPayload(item)));
@@ -93,6 +99,7 @@ class Notifier {
         }
       }
     } else {
+      _logger.severe('Failed to join the notifier:$_userId channel.');
       _dispatcher.send('error', ErrorEvent());
     }
   }

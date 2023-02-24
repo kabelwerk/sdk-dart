@@ -68,6 +68,7 @@ class Room {
   // constructors
   //
 
+  /// Do not create instances directly — use [Kabelwerk.openRoom] instead.
   Room(this._connector, this._roomId);
 
   //
