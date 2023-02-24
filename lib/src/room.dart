@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:logging/logging.dart';
 import 'package:phoenix_socket/phoenix_socket.dart'
     show PhoenixChannel, PushResponse;
 import 'package:phoenix_socket/phoenix_socket.dart' as phoenix show Message;
@@ -8,6 +9,8 @@ import './connector.dart';
 import './dispatcher.dart';
 import './events.dart';
 import './models.dart';
+
+final _logger = Logger('kabelwerk.room');
 
 /// A room is where chat messages are exchanged between an end user on one side
 /// and your care team (hub users) on the other side.
@@ -114,6 +117,8 @@ class Room {
 
   void _handleJoinResponse(Map<String, dynamic> payload) {
     if (payload['status'] == 'ok') {
+      _logger.info('Joined the room:$_roomId channel.');
+
       final roomJoin = RoomJoin.fromPayload(payload['response']);
 
       _attributes.clear();
@@ -159,6 +164,7 @@ class Room {
         }
       }
     } else {
+      _logger.severe('Failed to join the room:$_roomId channel.');
       _dispatcher.send('error', ErrorEvent());
     }
   }
@@ -254,10 +260,11 @@ class Room {
 
         completer.complete(message);
       })
-      ..onReply('error', (error) {
+      ..onReply('error', (PushResponse error) {
+        _logger.severe('Failed to delete the message.', error);
         completer.completeError(ErrorEvent());
       })
-      ..onReply('timeout', (error) {
+      ..onReply('timeout', (PushResponse error) {
         completer.completeError(ErrorEvent());
       });
 
@@ -292,10 +299,11 @@ class Room {
 
         completer.complete(messages);
       })
-      ..onReply('error', (error) {
+      ..onReply('error', (PushResponse error) {
+        _logger.severe('Failed to load earlier messages.', error);
         completer.completeError(ErrorEvent());
       })
-      ..onReply('timeout', (error) {
+      ..onReply('timeout', (PushResponse error) {
         completer.completeError(ErrorEvent());
       });
 
@@ -333,10 +341,11 @@ class Room {
 
         completer.complete(marker);
       })
-      ..onReply('error', (error) {
+      ..onReply('error', (PushResponse error) {
+        _logger.severe('Failed to move the room marker.', error);
         completer.completeError(ErrorEvent());
       })
-      ..onReply('timeout', (error) {
+      ..onReply('timeout', (PushResponse error) {
         completer.completeError(ErrorEvent());
       });
 
@@ -384,10 +393,11 @@ class Room {
 
         completer.complete(message);
       })
-      ..onReply('error', (error) {
+      ..onReply('error', (PushResponse error) {
+        _logger.severe('Failed to post the new message.', error);
         completer.completeError(ErrorEvent());
       })
-      ..onReply('timeout', (error) {
+      ..onReply('timeout', (PushResponse error) {
         completer.completeError(ErrorEvent());
       });
 
@@ -411,10 +421,11 @@ class Room {
 
         completer.complete(attributes);
       })
-      ..onReply('error', (error) {
+      ..onReply('error', (PushResponse error) {
+        _logger.severe("Failed to update the room's attributes.", error);
         completer.completeError(ErrorEvent());
       })
-      ..onReply('timeout', (error) {
+      ..onReply('timeout', (PushResponse error) {
         completer.completeError(ErrorEvent());
       });
 
