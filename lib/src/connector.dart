@@ -1,3 +1,4 @@
+import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:phoenix_socket/phoenix_socket.dart'
     show
@@ -143,5 +144,25 @@ class Connector {
   void disconnect() {
     state = ConnectionState.inactive;
     socket.close();
+  }
+
+  /// Makes an API call to the Kabelwerk server.
+  Future<dynamic> callApi(String method, String path, dynamic data) async {
+    final client = http.Client();
+
+    final request = http.Request(method, Uri.parse(path));
+    request.headers['kabelwerk-token'] = _config.token;
+
+    try {
+      final response = await client.send(request);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return response;
+      } else {
+        throw ErrorEvent();
+      }
+    } finally {
+      client.close();
+    }
   }
 }
