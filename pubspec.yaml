@@ -1,6 +1,8 @@
 name: kabelwerk
 version: 0.2.0
-description: The Kabelwerk SDK for Dart.
+description: >-
+  Kabelwerk is a fast and secure chat as a service for digital health
+  applications. This is the Kabelwerk SDK for Dart.
 
 homepage: https://kabelwerk.io
 repository: https://github.com/kabelwerk/sdk-dart
