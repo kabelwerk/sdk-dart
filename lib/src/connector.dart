@@ -1,3 +1,5 @@
+import 'dart:convert' show json;
+
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:phoenix_socket/phoenix_socket.dart'
@@ -166,6 +168,7 @@ class Connector {
         "or a refreshToken function in order to connect to the server.");
   }
 
+  /// Closes the connection to the server.
   void disconnect() {
     state = ConnectionState.inactive;
 
@@ -178,7 +181,8 @@ class Connector {
   ///
   /// Note that this method can be used only after [connect] has been called,
   /// otherwise the _token would not be set.
-  Future<dynamic> callApi(String method, String path, dynamic data) async {
+  Future<Map<String, dynamic>> callApi(
+      String method, String path, dynamic data) async {
     if (_connectHasBeenCalled != true) {
       throw StateError(
           "This Connector instance's connect() method has not been called yet.");
@@ -206,7 +210,14 @@ class Connector {
     }
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return response;
+      final fullResponse = await http.Response.fromStream(response);
+      final Map<String, dynamic> payload = {};
+
+      if (fullResponse.body.isNotEmpty) {
+        payload.addAll(json.decode(fullResponse.body));
+      }
+
+      return payload;
     } else {
       throw ErrorEvent();
     }

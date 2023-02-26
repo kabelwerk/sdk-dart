@@ -378,7 +378,9 @@ void main() {
 
       final future = connector.callApi('GET', '/cables/204', {});
 
-      future.catchError(expectAsync1((error) {}, count: 1));
+      future
+          .then(expectAsync1((data) {}, count: 0))
+          .catchError(expectAsync1((error) {}, count: 1));
     });
 
     test('bad token → refresh token → future resolves', () async {
@@ -391,7 +393,9 @@ void main() {
 
       final future = connector.callApi('GET', '/cables/204', {});
 
-      future.then(expectAsync1((data) {}, count: 1));
+      future
+          .then(expectAsync1((Map<String, dynamic> data) {}, count: 1))
+          .catchError(expectAsync1((error) {}, count: 0));
     });
 
     test('bad token → refresh token failed → future rejected', () async {
@@ -404,7 +408,9 @@ void main() {
 
       final future = connector.callApi('GET', '/cables/204', {});
 
-      future.catchError(expectAsync1((error) {}, count: 1));
+      future
+          .then(expectAsync1((data) {}, count: 0))
+          .catchError(expectAsync1((error) {}, count: 1));
     });
 
     test('bad response → future rejected', () async {
@@ -415,10 +421,12 @@ void main() {
 
       final future = connector.callApi('GET', '/cables/400', {});
 
-      future.catchError(expectAsync1((error) {}, count: 1));
+      future
+          .then(expectAsync1((data) {}, count: 0))
+          .catchError(expectAsync1((error) {}, count: 1));
     });
 
-    test('good response → future resolves', () async {
+    test('good response without payload → future resolves', () async {
       config.token = 'valid-token';
 
       connector.prepareSocket();
@@ -426,7 +434,29 @@ void main() {
 
       final future = connector.callApi('GET', '/cables/204', {});
 
-      future.then(expectAsync1((data) {}, count: 1));
+      future
+          .then(expectAsync1((Map<String, dynamic> data) {
+            expect(data.isEmpty, equals(true));
+          }, count: 1))
+          .catchError(expectAsync1((error) {}, count: 0));
+    });
+
+    test('good response with payload → future resolves', () async {
+      config.token = 'valid-token';
+
+      connector.prepareSocket();
+      await connector.connect();
+
+      final future = connector.callApi('GET', '/cables/200', {});
+
+      future
+          .then(expectAsync1((Map<String, dynamic> data) {
+            expect(data['bool'], equals(false));
+            expect(data['int'], equals(0));
+            expect(data['str'], equals(''));
+            expect(data['list'], equals([]));
+          }, count: 1))
+          .catchError(expectAsync1((error) {}, count: 0));
     });
   });
 }

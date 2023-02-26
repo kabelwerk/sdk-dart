@@ -5,6 +5,10 @@ defmodule ServerWeb.CableController do
 
   def show(conn, %{"id" => id}) do
     case id do
+      "200" ->
+        conn
+        |> json(%{bool: false, int: 0, str: "", list: []})
+
       "204" ->
         conn
         |> send_resp(204, "")
