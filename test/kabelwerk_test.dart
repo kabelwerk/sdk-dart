@@ -236,8 +236,8 @@ void main() {
       final future = kabelwerk.updateUser(name: 'Invalid Name');
 
       future
-          .then(expectAsync1((_) {}, count: 0))
-          .catchError(expectAsync1((ErrorEvent error) {
+          .then(expectAsync1((user) {}, count: 0))
+          .catchError(expectAsync1((error) {
             expect(kabelwerk.user.name, equals('Test User'));
           }, count: 1));
     });

@@ -222,7 +222,7 @@ void main() {
 
       future
           .then(expectAsync1((Message message) {}, count: 0))
-          .catchError(expectAsync1((ErrorEvent error) {}, count: 1));
+          .catchError(expectAsync1((error) {}, count: 1));
     });
 
     test('post_message ok → future resolves, message_posted event', () async {
@@ -240,7 +240,7 @@ void main() {
           .then(expectAsync1((Message message) {
             expect(message.text, equals("Hello!"));
           }, count: 1))
-          .catchError(expectAsync1((ErrorEvent error) {}, count: 0));
+          .catchError(expectAsync1((error) {}, count: 0));
     });
   });
 
@@ -272,7 +272,7 @@ void main() {
 
       future
           .then(expectAsync1((Message message) {}, count: 0))
-          .catchError(expectAsync1((ErrorEvent error) {}, count: 1));
+          .catchError(expectAsync1((error) {}, count: 1));
     });
 
     test('delete_message ok → future resolves, message_deleted event',
@@ -291,7 +291,7 @@ void main() {
           .then(expectAsync1((Message message) {
             expect(message.id, equals(1));
           }, count: 1))
-          .catchError(expectAsync1((ErrorEvent error) {}, count: 0));
+          .catchError(expectAsync1((error) {}, count: 0));
     });
   });
 
@@ -329,7 +329,7 @@ void main() {
 
       future
           .then(expectAsync1((Marker marker) {}, count: 0))
-          .catchError(expectAsync1((ErrorEvent error) {}, count: 1));
+          .catchError(expectAsync1((error) {}, count: 1));
     });
 
     test('move_marker ok → future resolves, marker_moved event', () async {
@@ -351,7 +351,7 @@ void main() {
 
             expect(room.ownMarker, equals(marker));
           }, count: 1))
-          .catchError(expectAsync1((ErrorEvent error) {}, count: 0));
+          .catchError(expectAsync1((error) {}, count: 0));
     });
   });
 
@@ -387,7 +387,7 @@ void main() {
 
       future
           .then(expectAsync1((Map attributes) {}, count: 0))
-          .catchError(expectAsync1((ErrorEvent error) {
+          .catchError(expectAsync1((error) {
             expect(room.attributes.length, equals(0));
           }, count: 1));
     });
@@ -403,7 +403,7 @@ void main() {
             expect(attributes, equals(newAttributes));
             expect(room.attributes, equals(newAttributes));
           }, count: 1))
-          .catchError(expectAsync1((ErrorEvent error) {}, count: 0));
+          .catchError(expectAsync1((error) {}, count: 0));
     });
   });
 
