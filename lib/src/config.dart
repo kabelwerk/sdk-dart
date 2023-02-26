@@ -88,6 +88,9 @@ class Config {
 
     final scheme = match.namedGroup('scheme') ?? 'wss://';
     final host = match.namedGroup('host')!;
+
+    // note that unlike its js counterpart, phoenix_socket does not append the
+    // transport (+ '/websocket') and thus requires the full path
     final path = '/' + (match.namedGroup('path') ?? 'socket/user/websocket');
 
     return scheme + host + path;

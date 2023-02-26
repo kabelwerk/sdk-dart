@@ -36,6 +36,8 @@ class Connector {
   String _token = '';
   bool _tokenIsRefreshing = false;
 
+  bool _connectHasBeenCalled = false;
+
   //
   // constructors
   //
@@ -46,7 +48,7 @@ class Connector {
   // private methods
   //
 
-  Future<Map<String, String>> _getParams() async {
+  Future<Map<String, String>> _getSocketParams() async {
     return {
       'token': _token,
       'agent': 'sdk-dart/0.1.0',
@@ -60,7 +62,7 @@ class Connector {
   /// Inits the socket and attaches the event listeners.
   void prepareSocket() {
     socket = PhoenixSocket(_config.getSocketUrl(),
-        socketOptions: PhoenixSocketOptions(dynamicParams: _getParams));
+        socketOptions: PhoenixSocketOptions(dynamicParams: _getSocketParams));
 
     socket.openStream.listen((PhoenixSocketOpenEvent event) {
       _logger.info('Socket connection opened.');
@@ -93,6 +95,8 @@ class Connector {
           _logger.severe('Failed to refresh the auth token.', error);
 
           _tokenIsRefreshing = false;
+
+          _dispatcher.send('error', ErrorEvent());
         });
       }
     });
@@ -105,6 +109,12 @@ class Connector {
 
   /// Sets the initial auth token and calls socket.connect().
   Future<PhoenixSocket?> connect() {
+    if (_connectHasBeenCalled != false) {
+      throw StateError(
+          "This Connector instance's .connect() method has already been called once.");
+    }
+
+    _connectHasBeenCalled = true;
     _token = _config.token;
 
     // if the connector is configured with a token — use it, regardless of
@@ -143,26 +153,25 @@ class Connector {
 
   void disconnect() {
     state = ConnectionState.inactive;
-    socket.close();
+
+    if (_connectHasBeenCalled == true) {
+      socket.close();
+    }
   }
 
   /// Makes an API call to the Kabelwerk server.
   Future<dynamic> callApi(String method, String path, dynamic data) async {
-    final client = http.Client();
+    final uri = Uri.parse(_config.getApiUrl() + path);
+    final request = http.Request(method, uri);
 
-    final request = http.Request(method, Uri.parse(_config.getApiUrl() + path));
     request.headers['kabelwerk-token'] = _config.token;
 
-    try {
-      final response = await client.send(request);
+    final response = await request.send();
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        return response;
-      } else {
-        throw ErrorEvent();
-      }
-    } finally {
-      client.close();
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return response;
+    } else {
+      throw ErrorEvent();
     }
   }
 }

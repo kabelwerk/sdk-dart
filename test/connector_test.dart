@@ -33,6 +33,17 @@ void main() {
     expect(() => connector.connect(), throwsStateError);
   });
 
+  test('call connect twice → state error', () async {
+    config.token = 'valid-token';
+    connector.prepareSocket();
+
+    final future = connector.connect();
+
+    expect(() => connector.connect(), throwsStateError);
+
+    await future;
+  });
+
   group('connect with token', () {
     test('socket connecting → connecting state', () async {
       config.token = 'valid-token';
@@ -54,9 +65,7 @@ void main() {
 
       dispatcher.on(
           'error',
-          expectAsync1((event) {
-            expect(event.runtimeType, equals(ErrorEvent));
-
+          expectAsync1((ErrorEvent event) {
             expect(connector.state, equals(ConnectionState.connecting));
           }, count: 1));
 
@@ -118,9 +127,7 @@ void main() {
 
       dispatcher.on(
           'error',
-          expectAsync1((event) {
-            expect(event.runtimeType, equals(ErrorEvent));
-
+          expectAsync1((ErrorEvent event) {
             expect(connector.state, equals(ConnectionState.inactive));
           }, count: 1));
 
@@ -151,9 +158,7 @@ void main() {
 
       dispatcher.on(
           'error',
-          expectAsync1((event) {
-            expect(event.runtimeType, equals(ErrorEvent));
-
+          expectAsync1((ErrorEvent event) {
             expect(connector.state, equals(ConnectionState.connecting));
           }, count: 1));
 
@@ -188,6 +193,24 @@ void main() {
           'disconnected',
           expectAsync1((DisconnectedEvent event) {
             expect(event.connectionState, equals(ConnectionState.connecting));
+            expect(connector.state, equals(ConnectionState.connecting));
+          }, count: 1));
+
+      connector.prepareSocket();
+      connector.connect();
+    });
+
+    test('refresh token failed → error event, connecting state', () {
+      // once to obtain the initial token, once when trying to reconnect
+      config.refreshToken = expectAsync1(
+          (prevToken) => prevToken == ''
+              ? Future.value('connect-then-disconnect')
+              : Future.error(Exception('ops!')),
+          count: 2);
+
+      dispatcher.on(
+          'error',
+          expectAsync1((ErrorEvent event) {
             expect(connector.state, equals(ConnectionState.connecting));
           }, count: 1));
 
@@ -242,9 +265,7 @@ void main() {
 
       dispatcher.on(
           'error',
-          expectAsync1((event) {
-            expect(event.runtimeType, equals(ErrorEvent));
-
+          expectAsync1((ErrorEvent event) {
             expect(connector.state, equals(ConnectionState.connecting));
           }, count: 1));
 
@@ -276,9 +297,7 @@ void main() {
       // connect with bad-token → error event
       dispatcher.on(
           'error',
-          expectAsync1((event) {
-            expect(event.runtimeType, equals(ErrorEvent));
-
+          expectAsync1((ErrorEvent event) {
             expect(connector.state, equals(ConnectionState.connecting));
           }, count: 1));
 
@@ -314,6 +333,21 @@ void main() {
       connector.connect();
     });
 
+    test('refresh token failed → error event, connecting state', () {
+      config.token = 'connect-then-disconnect';
+      config.refreshToken =
+          expectAsync1((_) => Future.error(Exception('ops')), count: 1);
+
+      dispatcher.on(
+          'error',
+          expectAsync1((ErrorEvent event) {
+            expect(connector.state, equals(ConnectionState.connecting));
+          }, count: 1));
+
+      connector.prepareSocket();
+      connector.connect();
+    });
+
     // test('socket error → error event', () {});
 
     test('disconnect → disconnected event, inactive state', () async {
@@ -338,7 +372,6 @@ void main() {
   group('call api', () {
     test('bad auth token → future rejected', () {
       config.token = 'bad-token';
-      connector.prepareSocket();
 
       final future = connector.callApi('GET', '/cables/204', {});
 
@@ -347,7 +380,6 @@ void main() {
 
     test('bad response → future rejected', () {
       config.token = 'valid-token';
-      connector.prepareSocket();
 
       final future = connector.callApi('GET', '/cables/400', {});
 
@@ -356,7 +388,6 @@ void main() {
 
     test('good response → future resolves', () {
       config.token = 'valid-token';
-      connector.prepareSocket();
 
       final future = connector.callApi('GET', '/cables/204', {});
 
