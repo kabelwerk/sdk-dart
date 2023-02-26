@@ -59,7 +59,7 @@ class Connector {
 
   /// Inits the socket and attaches the event listeners.
   void prepareSocket() {
-    socket = PhoenixSocket(_config.url,
+    socket = PhoenixSocket(_config.getSocketUrl(),
         socketOptions: PhoenixSocketOptions(dynamicParams: _getParams));
 
     socket.openStream.listen((PhoenixSocketOpenEvent event) {
@@ -150,7 +150,7 @@ class Connector {
   Future<dynamic> callApi(String method, String path, dynamic data) async {
     final client = http.Client();
 
-    final request = http.Request(method, Uri.parse(path));
+    final request = http.Request(method, Uri.parse(_config.getApiUrl() + path));
     request.headers['kabelwerk-token'] = _config.token;
 
     try {

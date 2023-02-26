@@ -336,13 +336,11 @@ void main() {
   });
 
   group('call api', () {
-    const apiUrl = 'http://localhost:4000/api';
-
     test('bad auth token → future rejected', () {
       config.token = 'bad-token';
       connector.prepareSocket();
 
-      final future = connector.callApi('GET', apiUrl + '/cables/204', {});
+      final future = connector.callApi('GET', '/cables/204', {});
 
       future.catchError(expectAsync1((error) {}, count: 1));
     });
@@ -351,7 +349,7 @@ void main() {
       config.token = 'valid-token';
       connector.prepareSocket();
 
-      final future = connector.callApi('GET', apiUrl + '/cables/400', {});
+      final future = connector.callApi('GET', '/cables/400', {});
 
       future.catchError(expectAsync1((error) {}, count: 1));
     });
@@ -360,7 +358,7 @@ void main() {
       config.token = 'valid-token';
       connector.prepareSocket();
 
-      final future = connector.callApi('GET', apiUrl + '/cables/204', {});
+      final future = connector.callApi('GET', '/cables/204', {});
 
       future.then(expectAsync1((error) {}, count: 1));
     });

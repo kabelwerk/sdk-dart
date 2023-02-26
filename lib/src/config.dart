@@ -1,5 +1,9 @@
 /// The configuration of a [Kabelwerk] instance.
 class Config {
+  //
+  // public variables
+  //
+
   /// The URL of the Kabelwerk backend to connect to.
   String url = 'wss://hub.kabelwerk.io/socket/user';
 
@@ -49,4 +53,55 @@ class Config {
   /// This is a shortcut for setting [ensureRoomsOn] to a list containing all
   /// hub slugs.
   bool ensureRoomsOnAllHubs = false;
+
+  //
+  // constructors
+  //
+
+  /// Do not create instances directly — use [Kabelwerk.config] instead.
+  Config();
+
+  //
+  // private methods
+  //
+
+  RegExpMatch _parseUrl() {
+    final regex = RegExp(
+        r'^(?<scheme>wss?:\/\/)?(?<host>[0-9a-z.:-]+)\/?(?<path>[a-z\/]+)?$');
+
+    final match = regex.firstMatch(url);
+
+    if (match == null) {
+      throw StateError('$url is not a valid Kabelwerk URL.');
+    }
+
+    return match;
+  }
+
+  //
+  // public methods
+  //
+
+  /// Returns the websocket URL.
+  String getSocketUrl() {
+    final match = _parseUrl();
+
+    final scheme = match.namedGroup('scheme') ?? 'wss://';
+    final host = match.namedGroup('host')!;
+    final path = '/' + (match.namedGroup('path') ?? 'socket/user/websocket');
+
+    return scheme + host + path;
+  }
+
+  /// Returns the API URL.
+  String getApiUrl() {
+    final match = _parseUrl();
+
+    final scheme =
+        match.namedGroup('scheme') == 'ws://' ? 'http://' : 'https://';
+    final host = match.namedGroup('host')!;
+    final path = '/api';
+
+    return scheme + host + path;
+  }
 }
