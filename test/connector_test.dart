@@ -370,28 +370,63 @@ void main() {
   });
 
   group('call api', () {
-    test('bad auth token → future rejected', () {
+    test('bad token → future rejected', () async {
       config.token = 'bad-token';
+
+      connector.prepareSocket();
+      await connector.connect();
 
       final future = connector.callApi('GET', '/cables/204', {});
 
       future.catchError(expectAsync1((error) {}, count: 1));
     });
 
-    test('bad response → future rejected', () {
+    test('bad token → refresh token → future resolves', () async {
+      config.token = 'valid-only-for-socket';
+      config.refreshToken =
+          expectAsync1((_) => Future.value('valid-token'), count: 1);
+
+      connector.prepareSocket();
+      await connector.connect();
+
+      final future = connector.callApi('GET', '/cables/204', {});
+
+      future.then(expectAsync1((data) {}, count: 1));
+    });
+
+    test('bad token → refresh token failed → future rejected', () async {
+      config.token = 'valid-only-for-socket';
+      config.refreshToken =
+          expectAsync1((_) => Future.error(Exception('ops')), count: 1);
+
+      connector.prepareSocket();
+      await connector.connect();
+
+      final future = connector.callApi('GET', '/cables/204', {});
+
+      future.catchError(expectAsync1((error) {}, count: 1));
+    });
+
+    test('bad response → future rejected', () async {
       config.token = 'valid-token';
+
+      connector.prepareSocket();
+      await connector.connect();
 
       final future = connector.callApi('GET', '/cables/400', {});
 
       future.catchError(expectAsync1((error) {}, count: 1));
     });
 
-    test('good response → future resolves', () {
+    test('good response → future resolves', () async {
       config.token = 'valid-token';
+
+      connector.prepareSocket();
+      await connector.connect();
 
       final future = connector.callApi('GET', '/cables/204', {});
 
-      future.then(expectAsync1((error) {}, count: 1));
+      future.then(expectAsync1((data) {}, count: 1));
     });
   });
 }

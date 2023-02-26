@@ -13,6 +13,8 @@ import './connection_state.dart';
 import './dispatcher.dart';
 import './events.dart';
 
+const _userAgent = 'sdk-dart/0.1.0';
+
 final _logger = Logger('kabelwerk.connector');
 
 class Connector {
@@ -51,8 +53,21 @@ class Connector {
   Future<Map<String, String>> _getSocketParams() async {
     return {
       'token': _token,
-      'agent': 'sdk-dart/0.1.0',
+      'agent': _userAgent,
     };
+  }
+
+  Future<http.StreamedResponse> _sendApiRequest(
+      String method, String path, dynamic data, String token) {
+    final uri = Uri.parse(_config.getApiUrl() + path);
+    final request = http.Request(method, uri);
+
+    request.headers['kabelwerk-token'] = token;
+    request.headers['user-agent'] = _userAgent;
+
+    _logger.fine('Sending a request $method $uri.');
+
+    return request.send();
   }
 
   //
@@ -160,13 +175,35 @@ class Connector {
   }
 
   /// Makes an API call to the Kabelwerk server.
+  ///
+  /// Note that this method can be used only after [connect] has been called,
+  /// otherwise the _token would not be set.
   Future<dynamic> callApi(String method, String path, dynamic data) async {
-    final uri = Uri.parse(_config.getApiUrl() + path);
-    final request = http.Request(method, uri);
+    if (_connectHasBeenCalled != true) {
+      throw StateError(
+          "This Connector instance's connect() method has not been called yet.");
+    }
 
-    request.headers['kabelwerk-token'] = _config.token;
+    http.StreamedResponse response =
+        await _sendApiRequest(method, path, data, _token);
 
-    final response = await request.send();
+    // if the request is rejected with 401, assume that the token has expired,
+    // refresh it, and try again
+    if (response.statusCode == 401 &&
+        _config.refreshToken != null &&
+        _tokenIsRefreshing == false) {
+      final String newToken = await _config.refreshToken!(_token);
+
+      // use the opportunity to update _token — unless there already is another
+      // refresh under way
+      if (_tokenIsRefreshing == false) {
+        _logger.info('Auth token refreshed.');
+        _token = newToken;
+      }
+
+      // this call here is the reason why the method needs the fourth parameter
+      response = await _sendApiRequest(method, path, data, newToken);
+    }
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return response;

@@ -15,6 +15,9 @@ defmodule ServerWeb.UserSocket do
       "valid-token" ->
         {:ok, socket}
 
+      "valid-only-for-socket" ->
+        {:ok, socket}
+
       "connect-then-disconnect" ->
         Lumberjack.disconnect_after(id(socket), 200)
 
