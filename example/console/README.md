@@ -1,4 +1,4 @@
-# Kabelwerk Demo
+# Kabelwerk SDK Demo
 
 A very simple and crude console app showcasing the Kabelwerk SDK for Dart.
 
