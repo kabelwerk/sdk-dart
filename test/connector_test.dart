@@ -376,7 +376,7 @@ void main() {
       connector.prepareSocket();
       await connector.connect();
 
-      final future = connector.callApi('GET', '/cables/204', {});
+      final future = connector.callApi('GET', '/cables/204');
 
       future
           .then(expectAsync1((data) {}, count: 0))
@@ -391,7 +391,7 @@ void main() {
       connector.prepareSocket();
       await connector.connect();
 
-      final future = connector.callApi('GET', '/cables/204', {});
+      final future = connector.callApi('GET', '/cables/204');
 
       future
           .then(expectAsync1((Map<String, dynamic> data) {}, count: 1))
@@ -406,7 +406,7 @@ void main() {
       connector.prepareSocket();
       await connector.connect();
 
-      final future = connector.callApi('GET', '/cables/204', {});
+      final future = connector.callApi('GET', '/cables/204');
 
       future
           .then(expectAsync1((data) {}, count: 0))
@@ -419,7 +419,7 @@ void main() {
       connector.prepareSocket();
       await connector.connect();
 
-      final future = connector.callApi('GET', '/cables/400', {});
+      final future = connector.callApi('GET', '/cables/400');
 
       future
           .then(expectAsync1((data) {}, count: 0))
@@ -432,7 +432,7 @@ void main() {
       connector.prepareSocket();
       await connector.connect();
 
-      final future = connector.callApi('GET', '/cables/204', {});
+      final future = connector.callApi('GET', '/cables/204');
 
       future
           .then(expectAsync1((Map<String, dynamic> data) {
@@ -447,7 +447,7 @@ void main() {
       connector.prepareSocket();
       await connector.connect();
 
-      final future = connector.callApi('GET', '/cables/200', {});
+      final future = connector.callApi('GET', '/cables/200');
 
       future
           .then(expectAsync1((Map<String, dynamic> data) {

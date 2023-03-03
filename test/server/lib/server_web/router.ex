@@ -11,5 +11,6 @@ defmodule ServerWeb.Router do
     pipe_through [:api, :authenticate]
 
     get "/cables/:id", CableController, :show
+    post "/rooms/:room_id/uploads", UploadController, :create
   end
 end

@@ -1,3 +1,4 @@
+import 'package:http/http.dart' show MultipartFile;
 import 'package:test/test.dart';
 
 import 'package:kabelwerk/src/connector.dart';
@@ -291,6 +292,52 @@ void main() {
           .then(expectAsync1((Message message) {
             expect(message.id, equals(1));
           }, count: 1))
+          .catchError(expectAsync1((error) {}, count: 0));
+    });
+  });
+
+  group('post upload', () {
+    late Connector connector;
+    late Room room;
+    late MultipartFile file;
+
+    setUp(() async {
+      file = MultipartFile.fromString("file", "", filename: "test.txt");
+      connector = await setUpConnector();
+    });
+
+    tearDown(() {
+      room.disconnect();
+      connector.disconnect();
+    });
+
+    test('call postUpload too early → state error', () {
+      room = Room(connector, 0);
+
+      expect(() => room.postUpload(file), throwsStateError);
+    });
+
+    test('400 → future rejected', () async {
+      // the test server's uploads endpoint will reject the request if the file
+      // field's name is not "file"
+      file = MultipartFile.fromString("not-file", "", filename: "test.txt");
+
+      room = await setUpRoom(connector);
+
+      final future = room.postUpload(file);
+
+      future
+          .then(expectAsync1((Upload upload) {}, count: 0))
+          .catchError(expectAsync1((error) {}, count: 1));
+    });
+
+    test('201 → future resolves', () async {
+      room = await setUpRoom(connector);
+
+      final future = room.postUpload(file);
+
+      future
+          .then(expectAsync1((Upload upload) {}, count: 1))
           .catchError(expectAsync1((error) {}, count: 0));
     });
   });

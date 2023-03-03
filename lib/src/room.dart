@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:http/http.dart' show MultipartFile;
 import 'package:logging/logging.dart';
 import 'package:phoenix_socket/phoenix_socket.dart'
     show PhoenixChannel, PushResponse;
@@ -401,6 +402,28 @@ class Room {
       ..onReply('timeout', (PushResponse error) {
         completer.completeError(ErrorEvent());
       });
+
+    return completer.future;
+  }
+
+  /// Uploads a file in the chat room.
+  ///
+  /// The parameter is expected to be a [MultipartFile]. Returns a [Future]
+  /// which resolves into the newly created [Upload] (the ID of which can be
+  /// then used to post an image or attachment message).
+  Future<Upload> postUpload(MultipartFile file) {
+    _ensureReady();
+
+    final Completer<Upload> completer = Completer();
+
+    _connector
+        .callApi('POST', '/rooms/$_roomId/uploads', file: file)
+        .then((Map<String, dynamic> responsePayload) {
+      final upload = Upload.fromPayload(responsePayload);
+      completer.complete(upload);
+    }).catchError((error) {
+      completer.completeError(error);
+    });
 
     return completer.future;
   }

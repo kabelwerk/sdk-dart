@@ -60,12 +60,17 @@ class Connector {
   }
 
   Future<http.StreamedResponse> _sendApiRequest(
-      String method, String path, dynamic data, String token) {
+      String method, String path, http.MultipartFile? file, String token) {
     final uri = Uri.parse(_config.getApiUrl() + path);
-    final request = http.Request(method, uri);
+
+    final request = http.MultipartRequest(method, uri);
 
     request.headers['kabelwerk-token'] = token;
     request.headers['user-agent'] = _userAgent;
+
+    if (file != null) {
+      request.files.add(file);
+    }
 
     _logger.fine('Sending a request $method $uri.');
 
@@ -181,15 +186,15 @@ class Connector {
   ///
   /// Note that this method can be used only after [connect] has been called,
   /// otherwise the _token would not be set.
-  Future<Map<String, dynamic>> callApi(
-      String method, String path, dynamic data) async {
+  Future<Map<String, dynamic>> callApi(String method, String path,
+      {http.MultipartFile? file}) async {
     if (_connectHasBeenCalled != true) {
       throw StateError(
           "This Connector instance's connect() method has not been called yet.");
     }
 
     http.StreamedResponse response =
-        await _sendApiRequest(method, path, data, _token);
+        await _sendApiRequest(method, path, file, _token);
 
     // if the request is rejected with 401, assume that the token has expired,
     // refresh it, and try again
@@ -206,7 +211,7 @@ class Connector {
       }
 
       // this call here is the reason why the method needs the fourth parameter
-      response = await _sendApiRequest(method, path, data, newToken);
+      response = await _sendApiRequest(method, path, file, newToken);
     }
 
     if (response.statusCode >= 200 && response.statusCode < 300) {

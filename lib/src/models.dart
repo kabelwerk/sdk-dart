@@ -158,6 +158,8 @@ class Message extends Equatable {
 
 /// An upload.
 class Upload extends Equatable {
+  Upload.fromPayload(Map<String, dynamic> data);
+
   @override
   List<Object?> get props => [];
 }
