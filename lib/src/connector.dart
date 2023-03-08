@@ -18,7 +18,7 @@ import './connection_state.dart';
 import './dispatcher.dart';
 import './events.dart';
 
-const _userAgent = 'sdk-dart/0.1.0';
+const _userAgent = 'sdk-dart/0.2.1';
 
 final _logger = Logger('kabelwerk.connector');
 
