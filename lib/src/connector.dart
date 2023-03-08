@@ -1,6 +1,9 @@
 import 'dart:convert' show json;
 
-import 'package:http/http.dart' as http;
+import 'package:cross_file/cross_file.dart' show XFile;
+import 'package:http/http.dart'
+    show Request, MultipartRequest, MultipartFile, Response, StreamedResponse;
+import 'package:http_parser/http_parser.dart' show MediaType;
 import 'package:logging/logging.dart';
 import 'package:phoenix_socket/phoenix_socket.dart'
     show
@@ -59,17 +62,30 @@ class Connector {
     };
   }
 
-  Future<http.StreamedResponse> _sendApiRequest(
-      String method, String path, http.MultipartFile? file, String token) {
+  Future<StreamedResponse> _sendApiRequest(
+      String method, String path, XFile? file, String token) async {
     final uri = Uri.parse(_config.getApiUrl() + path);
 
-    final request = http.MultipartRequest(method, uri);
+    final request =
+        file == null ? Request(method, uri) : MultipartRequest(method, uri);
 
     request.headers['kabelwerk-token'] = token;
     request.headers['user-agent'] = _userAgent;
 
     if (file != null) {
-      request.files.add(file);
+      final multipartRequest = request as MultipartRequest;
+
+      if (file.mimeType == null) {
+        throw StateError('File uploads must have their MIME type set.');
+      }
+
+      // both the filename and contentType must be set
+      final multipartFile = MultipartFile.fromBytes(
+          'file', await file.readAsBytes(),
+          filename: file.name.isNotEmpty ? file.name : 'file',
+          contentType: MediaType.parse(file.mimeType!));
+
+      multipartRequest.files.add(multipartFile);
     }
 
     _logger.fine('Sending a request $method $uri.');
@@ -187,13 +203,13 @@ class Connector {
   /// Note that this method can be used only after [connect] has been called,
   /// otherwise the _token would not be set.
   Future<Map<String, dynamic>> callApi(String method, String path,
-      {http.MultipartFile? file}) async {
+      {XFile? file}) async {
     if (_connectHasBeenCalled != true) {
       throw StateError(
           "This Connector instance's connect() method has not been called yet.");
     }
 
-    http.StreamedResponse response =
+    StreamedResponse response =
         await _sendApiRequest(method, path, file, _token);
 
     // if the request is rejected with 401, assume that the token has expired,
@@ -215,7 +231,7 @@ class Connector {
     }
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      final fullResponse = await http.Response.fromStream(response);
+      final fullResponse = await Response.fromStream(response);
       final Map<String, dynamic> payload = {};
 
       if (fullResponse.body.isNotEmpty) {

@@ -3,7 +3,7 @@ defmodule ServerWeb.CableController do
 
   action_fallback ServerWeb.FallbackController
 
-  def show(conn, %{"id" => id}) do
+  def get(conn, %{"id" => id}) do
     case id do
       "200" ->
         conn
@@ -18,5 +18,16 @@ defmodule ServerWeb.CableController do
         |> put_status(400)
         |> json(%{reason: "Error!"})
     end
+  end
+
+  def post(conn, %{"file" => %Plug.Upload{} = plug_upload}) do
+    conn
+    |> json(%{mime_type: plug_upload.content_type, name: plug_upload.filename})
+  end
+
+  def post(conn, _params) do
+    conn
+    |> put_status(400)
+    |> json(%{errors: %{}})
   end
 end

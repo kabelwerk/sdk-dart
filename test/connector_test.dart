@@ -1,3 +1,6 @@
+import 'dart:typed_data' show Uint8List;
+
+import 'package:cross_file/cross_file.dart' show XFile;
 import 'package:test/test.dart';
 
 import 'package:kabelwerk/src/config.dart';
@@ -369,7 +372,7 @@ void main() {
     });
   });
 
-  group('call api', () {
+  group('call api, GET', () {
     test('bad token → future rejected', () async {
       config.token = 'bad-token';
 
@@ -455,6 +458,57 @@ void main() {
             expect(data['int'], equals(0));
             expect(data['str'], equals(''));
             expect(data['list'], equals([]));
+          }, count: 1))
+          .catchError(expectAsync1((error) {}, count: 0));
+    });
+  });
+
+  group('call api, POST a file', () {
+    final fileData = Uint8List.fromList([1, 2, 3, 4]);
+    final file = XFile.fromData(fileData, mimeType: 'image/png');
+
+    test('upload without mime type → state error', () async {
+      config.token = 'valid-token';
+
+      connector.prepareSocket();
+      await connector.connect();
+
+      final badFile = XFile.fromData(fileData);
+
+      expect(() => connector.callApi('POST', '/cables', file: badFile),
+          throwsStateError);
+    });
+
+    test('upload ok → future resolves', () async {
+      config.token = 'valid-token';
+
+      connector.prepareSocket();
+      await connector.connect();
+
+      final future = connector.callApi('POST', '/cables', file: file);
+
+      future
+          .then(expectAsync1((Map<String, dynamic> data) {
+            expect(data['mime_type'], equals('image/png'));
+            expect(data['name'], equals('file'));
+          }, count: 1))
+          .catchError(expectAsync1((error) {}, count: 0));
+    });
+
+    test('bad token → refresh token → upload ok → future resolves', () async {
+      config.token = 'valid-only-for-socket';
+      config.refreshToken =
+          expectAsync1((_) => Future.value('valid-token'), count: 1);
+
+      connector.prepareSocket();
+      await connector.connect();
+
+      final future = connector.callApi('POST', '/cables', file: file);
+
+      future
+          .then(expectAsync1((Map<String, dynamic> data) {
+            expect(data['mime_type'], equals('image/png'));
+            expect(data['name'], equals('file'));
           }, count: 1))
           .catchError(expectAsync1((error) {}, count: 0));
     });

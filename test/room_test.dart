@@ -1,4 +1,6 @@
-import 'package:http/http.dart' show MultipartFile;
+import 'dart:typed_data' show Uint8List;
+
+import 'package:cross_file/cross_file.dart' show XFile;
 import 'package:test/test.dart';
 
 import 'package:kabelwerk/src/connector.dart';
@@ -297,12 +299,13 @@ void main() {
   });
 
   group('post upload', () {
+    final fileData = Uint8List.fromList([5, 6, 7, 8]);
+    final file = XFile.fromData(fileData, mimeType: 'application/pdf');
+
     late Connector connector;
     late Room room;
-    late MultipartFile file;
 
     setUp(() async {
-      file = MultipartFile.fromString("file", "", filename: "test.txt");
       connector = await setUpConnector();
     });
 
@@ -312,17 +315,15 @@ void main() {
     });
 
     test('call postUpload too early → state error', () {
-      room = Room(connector, 0);
+      room = Room(connector, 1);
 
       expect(() => room.postUpload(file), throwsStateError);
     });
 
     test('400 → future rejected', () async {
-      // the test server's uploads endpoint will reject the request if the file
-      // field's name is not "file"
-      file = MultipartFile.fromString("not-file", "", filename: "test.txt");
-
-      room = await setUpRoom(connector);
+      // the test server's uploads endpoint will reject the request when the
+      // room id is not positive
+      room = await setUpRoom(connector, roomId: 0);
 
       final future = room.postUpload(file);
 
@@ -332,7 +333,7 @@ void main() {
     });
 
     test('201 → future resolves', () async {
-      room = await setUpRoom(connector);
+      room = await setUpRoom(connector, roomId: 1);
 
       final future = room.postUpload(file);
 
