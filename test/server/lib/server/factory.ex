@@ -1,4 +1,6 @@
 defmodule Server.Factory do
+  alias ServerWeb.Endpoint
+
   #
   # base objects
   #
@@ -91,6 +93,27 @@ defmodule Server.Factory do
       updated_at: timestamp(),
       upload: Keyword.get(opts, :upload, nil),
       user: user()
+    }
+  end
+
+  @doc """
+  Generate a payload for a post_upload response.
+  """
+  def upload(opts \\ []) do
+    %{
+      id: 1,
+      mime_type: Keyword.get(opts, :mime_type, "image/png"),
+      name: Keyword.get(opts, :name, "image.png"),
+      original: %{
+        height: Keyword.get(opts, :original_height, 512),
+        url: Endpoint.url() <> "/media/uploads/original",
+        width: Keyword.get(opts, :original_width, 512)
+      },
+      preview: %{
+        height: Keyword.get(opts, :preview_height, 256),
+        url: Endpoint.url() <> "/media/uploads/preview",
+        width: Keyword.get(opts, :preview_width, 256)
+      }
     }
   end
 

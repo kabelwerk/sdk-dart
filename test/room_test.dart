@@ -338,7 +338,10 @@ void main() {
       final future = room.postUpload(file);
 
       future
-          .then(expectAsync1((Upload upload) {}, count: 1))
+          .then(expectAsync1((Upload upload) {
+            expect(upload.mimeType, equals('application/pdf'));
+            expect(upload.name, equals('file'));
+          }, count: 1))
           .catchError(expectAsync1((error) {}, count: 0));
     });
   });

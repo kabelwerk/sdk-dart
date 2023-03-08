@@ -148,7 +148,8 @@ class Message extends Equatable {
         text = data['text'],
         type = MessageType.values.byName(data['type']),
         updatedAt = DateTime.parse(data['updated_at']),
-        upload = data['upload'],
+        upload =
+            data['upload'] == null ? null : Upload.fromPayload(data['upload']),
         user = User.fromPayload(data['user']);
 
   @override
@@ -157,11 +158,71 @@ class Message extends Equatable {
 }
 
 /// An upload.
+///
+/// If the uploaded file is an image with either width or height > 500 pixels,
+/// then a scaled-down preview image is generated. If the uploaded file is an
+/// image of which both the height and width are ≤ 500 pixels, then the
+/// original file is used as a preview image. If the uploaded file is not an
+/// image file, then a thumbnail image is used.
 class Upload extends Equatable {
-  Upload.fromPayload(Map<String, dynamic> data);
+  /// Height in pixels if the uploaded file is an image or null if it is not.
+  final int? height;
+
+  /// The upload's unique integer ID.
+  final int id;
+
+  /// The [MIME
+  /// type](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types)
+  /// of the upload, e.g. "application/pdf" or "image/jpeg".
+  final String mimeType;
+
+  /// The name of the file uploaded by the user.
+  final String name;
+
+  /// The height in pixels of the preview image; always ≤ 500.
+  final int previewHeight;
+
+  /// URL for downloading the preview image.
+  final String previewUrl;
+
+  /// The width in pixels of the preview image; always ≤ 500.
+  final int previewWidth;
+
+  /// URL for downloading the uploaded file.
+  final String url;
+
+  /// Width in pixels if the uploaded file is an image or null if it is not.
+  final int? width;
+
+  /// Creates an upload from a socket message payload.
+  ///
+  /// The payload may be:
+  ///
+  /// - a `post_upload` response;
+  /// - part of a [Message] payload.
+  Upload.fromPayload(Map<String, dynamic> data)
+      : height = data['original']['height'],
+        id = data['id'],
+        mimeType = data['mime_type'],
+        name = data['name'],
+        previewHeight = data['preview']['height'],
+        previewUrl = data['preview']['url'],
+        previewWidth = data['preview']['width'],
+        url = data['original']['url'],
+        width = data['original']['width'];
 
   @override
-  List<Object?> get props => [];
+  List<Object?> get props => [
+        height,
+        id,
+        mimeType,
+        name,
+        previewHeight,
+        previewUrl,
+        previewWidth,
+        url,
+        width
+      ];
 }
 
 /// A marker on a message in a room.
