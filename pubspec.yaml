@@ -12,6 +12,7 @@ dependencies:
   cross_file: ^0.3.3
   equatable: ^2.0.5
   http: ^0.13.5
+  http_parser: ^4.0.0
   logging: ^1.1.0
   phoenix_socket: 0.6.2
   web_socket_channel: 2.2.0
