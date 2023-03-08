@@ -166,7 +166,7 @@ class Message extends Equatable {
 /// image file, then a thumbnail image is used.
 class Upload extends Equatable {
   /// Height in pixels if the uploaded file is an image or null if it is not.
-  final int? height;
+  final num? height;
 
   /// The upload's unique integer ID.
   final int id;
@@ -180,19 +180,19 @@ class Upload extends Equatable {
   final String name;
 
   /// The height in pixels of the preview image; always ≤ 500.
-  final int previewHeight;
+  final num previewHeight;
 
   /// URL for downloading the preview image.
   final String previewUrl;
 
   /// The width in pixels of the preview image; always ≤ 500.
-  final int previewWidth;
+  final num previewWidth;
 
   /// URL for downloading the uploaded file.
   final String url;
 
   /// Width in pixels if the uploaded file is an image or null if it is not.
-  final int? width;
+  final num? width;
 
   /// Creates an upload from a socket message payload.
   ///
