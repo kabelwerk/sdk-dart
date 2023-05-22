@@ -80,7 +80,7 @@ class NoTokenScreen extends StatelessWidget {
             Center(
               child: ElevatedButton(
                 onPressed: () {
-                  Provider.of<Auth>(context, listen: false).generateUser();
+                  _handleGenerateUserButtonPress(context);
                 },
                 child: const Text('Generate user'),
               ),
@@ -90,6 +90,18 @@ class NoTokenScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _handleGenerateUserButtonPress(BuildContext context) {
+    Provider.of<Auth>(context, listen: false)
+        .generateUser()
+        .catchError((error) {
+      final snackBar = SnackBar(
+        content: Text(error.toString()),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    });
   }
 }
 
