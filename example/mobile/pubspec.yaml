@@ -1,5 +1,6 @@
 name: kabelwerk_example_mobile
 description: A simple Flutter app showcasing the Kabelwerk SDK for Dart.
+
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -34,6 +35,9 @@ dependencies:
   cupertino_icons: ^1.0.2
   http: ^0.13.6
   provider: ^6.0.5
+
+  kabelwerk:
+    path: ../../
 
 dev_dependencies:
   flutter_test:
