@@ -1,12 +1,19 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide ConnectionState;
+import 'package:kabelwerk/kabelwerk.dart' show ConnectionState;
 import 'package:provider/provider.dart';
 
 import './auth.dart';
+import './kabelwerk.dart';
 
 void main() {
   runApp(MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (context) => Auth()),
+      ChangeNotifierProxyProvider<Auth, KabelwerkContext>(
+        create: (context) => KabelwerkContext(),
+        update: (context, auth, kabelwerkContext) =>
+            kabelwerkContext!..update(token: auth.token),
+      ),
     ],
     child: const App(),
   ));
@@ -33,9 +40,11 @@ class App extends StatelessWidget {
         primarySwatch: Colors.blueGrey,
       ),
       routes: {
-        '/': (BuildContext context) => Consumer<Auth>(
-              builder: (context, auth, child) =>
-                  auth.token == '' ? const NoTokenScreen() : const HomeScreen(),
+        '/': (BuildContext context) => Consumer<KabelwerkContext>(
+              builder: (context, kabelwerk, child) =>
+                  kabelwerk.state == ConnectionState.inactive
+                      ? const NoTokenScreen()
+                      : const HomeScreen(),
             ),
         '/no-token': (BuildContext context) => const NoTokenScreen(),
         '/home': (BuildContext context) => const HomeScreen(),
