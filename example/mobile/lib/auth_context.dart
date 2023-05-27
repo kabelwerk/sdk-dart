@@ -3,10 +3,19 @@ import 'dart:convert' show json;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-class Auth extends ChangeNotifier {
-  static const generateUserUrl = 'https://hubdemo.kabelwerk.io/api/demo-users';
+/// The endpoint on Kabelwerk's demo backend for generating users.
+const generateUserUrl = 'https://hubdemo.kabelwerk.io/api/demo-users';
+
+class AuthContext extends ChangeNotifier {
+  //
+  // public variables
+  //
 
   String token = '';
+
+  //
+  // public methods
+  //
 
   Future<void> generateUser() async {
     final uri = Uri.parse(generateUserUrl);

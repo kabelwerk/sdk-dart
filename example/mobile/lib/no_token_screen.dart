@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import './auth.dart';
+import './auth_context.dart';
 
 class NoTokenScreen extends StatelessWidget {
   const NoTokenScreen({super.key});
@@ -47,7 +47,7 @@ class NoTokenScreen extends StatelessWidget {
   }
 
   void _handleGenerateUserButtonPress(BuildContext context) {
-    Provider.of<Auth>(context, listen: false)
+    Provider.of<AuthContext>(context, listen: false)
         .generateUser()
         .catchError((error) {
       final snackBar = SnackBar(

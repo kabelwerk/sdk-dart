@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kabelwerk/kabelwerk.dart' as kabelwerk;
 import 'package:provider/provider.dart';
 
-import './auth.dart';
+import './auth_context.dart';
 import './home_screen.dart';
 import './kabelwerk_context.dart';
 import './no_token_screen.dart';
@@ -11,11 +11,11 @@ import './room_screen.dart';
 void main() {
   runApp(MultiProvider(
     providers: [
-      ChangeNotifierProvider(create: (context) => Auth()),
-      ChangeNotifierProxyProvider<Auth, KabelwerkContext>(
+      ChangeNotifierProvider(create: (context) => AuthContext()),
+      ChangeNotifierProxyProvider<AuthContext, KabelwerkContext>(
         create: (context) => KabelwerkContext(),
-        update: (context, auth, kabelwerkContext) =>
-            kabelwerkContext!..handleAuthChange(token: auth.token),
+        update: (context, authContext, kabelwerkContext) =>
+            kabelwerkContext!..handleAuthChange(token: authContext.token),
       ),
     ],
     child: const App(),

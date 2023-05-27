@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import './auth.dart';
+import './auth_context.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -52,7 +52,7 @@ class HomeScreen extends StatelessWidget {
             Center(
               child: ElevatedButton(
                 onPressed: () {
-                  Provider.of<Auth>(context, listen: false).logout();
+                  Provider.of<AuthContext>(context, listen: false).logout();
                 },
                 child: const Text('Reset user'),
               ),
