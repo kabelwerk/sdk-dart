@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart' hide ConnectionState;
-import 'package:kabelwerk/kabelwerk.dart' show ConnectionState;
+import 'package:flutter/material.dart';
+import 'package:kabelwerk/kabelwerk.dart' as kabelwerk;
 import 'package:provider/provider.dart';
 
 import './auth.dart';
 import './kabelwerk.dart';
+import './room_screen.dart';
 
 void main() {
   runApp(MultiProvider(
@@ -12,7 +13,7 @@ void main() {
       ChangeNotifierProxyProvider<Auth, KabelwerkContext>(
         create: (context) => KabelwerkContext(),
         update: (context, auth, kabelwerkContext) =>
-            kabelwerkContext!..update(token: auth.token),
+            kabelwerkContext!..handleAuthChange(token: auth.token),
       ),
     ],
     child: const App(),
@@ -22,32 +23,23 @@ void main() {
 class App extends StatelessWidget {
   const App({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Kabelwerk Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
         primarySwatch: Colors.blueGrey,
       ),
       routes: {
         '/': (BuildContext context) => Consumer<KabelwerkContext>(
-              builder: (context, kabelwerk, child) =>
-                  kabelwerk.state == ConnectionState.inactive
+              builder: (context, kabelwerkContext, child) =>
+                  kabelwerkContext.state == kabelwerk.ConnectionState.inactive
                       ? const NoTokenScreen()
                       : const HomeScreen(),
             ),
         '/no-token': (BuildContext context) => const NoTokenScreen(),
         '/home': (BuildContext context) => const HomeScreen(),
+        '/room': (BuildContext context) => const RoomScreen(),
       },
       initialRoute: '/',
     );
@@ -146,7 +138,9 @@ class HomeScreen extends StatelessWidget {
             const Spacer(),
             Center(
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.pushNamed(context, '/room');
+                },
                 child: const Text('Open a chat room'),
               ),
             ),
