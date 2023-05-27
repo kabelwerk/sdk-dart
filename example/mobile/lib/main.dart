@@ -3,7 +3,7 @@ import 'package:kabelwerk/kabelwerk.dart' as kabelwerk;
 import 'package:provider/provider.dart';
 
 import './auth.dart';
-import './kabelwerk.dart';
+import './kabelwerk_context.dart';
 import './room_screen.dart';
 
 void main() {

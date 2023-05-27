@@ -5,7 +5,7 @@ import 'package:flutter_chat_ui/flutter_chat_ui.dart' as flutter_chat_ui;
 import 'package:kabelwerk/kabelwerk.dart';
 import 'package:provider/provider.dart';
 
-import './kabelwerk.dart';
+import './kabelwerk_context.dart';
 
 class RoomScreen extends StatefulWidget {
   final int roomId;
@@ -22,8 +22,16 @@ class RoomScreen extends StatefulWidget {
 class _RoomScreenState extends State<RoomScreen> {
   late final Room _room;
 
+  // Whether the room's ready event has been triggered.
   bool _ready = false;
+
+  // The list of downloaded messages, ordered as they appear in the room — the
+  // most recent message goes last.
   List<Message> _messages = [];
+
+  //
+  // life cycle hooks
+  //
 
   @override
   void initState() {
@@ -62,6 +70,7 @@ class _RoomScreenState extends State<RoomScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Kabelwerk Chat')),
       body: flutter_chat_ui.Chat(
+        // note that Flutter Chat expects the messages in reversed order
         messages: _messages.reversed.map(_convertMessage).toList(),
         onSendPressed: (flutter_chat_types.PartialText text) {
           _room.postMessage(text: text.text);
@@ -71,19 +80,25 @@ class _RoomScreenState extends State<RoomScreen> {
       ),
     );
   }
+}
 
-  flutter_chat_types.User _convertUser(User user) {
-    return flutter_chat_types.User(
-      id: user.id.toString(),
-      firstName: user.name,
-    );
-  }
+//
+// helpers
+//
 
-  flutter_chat_types.Message _convertMessage(Message message) {
-    return flutter_chat_types.TextMessage(
-      author: _convertUser(message.user),
-      id: message.id.toString(),
-      text: message.text,
-    );
-  }
+// Convert a Kabelwerk user into a Flutter Chat user.
+flutter_chat_types.User _convertUser(User user) {
+  return flutter_chat_types.User(
+    id: user.id.toString(),
+    firstName: user.name,
+  );
+}
+
+// Convert a Kabelwerk message into a Flutter Chat message.
+flutter_chat_types.Message _convertMessage(Message message) {
+  return flutter_chat_types.TextMessage(
+    author: _convertUser(message.user),
+    id: message.id.toString(),
+    text: message.text,
+  );
 }
