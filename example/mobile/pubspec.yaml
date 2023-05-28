@@ -35,6 +35,7 @@ dependencies:
   cupertino_icons: ^1.0.2
   flutter_chat_types: ^3.6.0
   flutter_chat_ui: ^1.6.6
+  flutter_secure_storage: ^8.0.0
   http: ^0.13.6
   provider: ^6.0.5
 
