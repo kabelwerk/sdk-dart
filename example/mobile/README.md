@@ -1,16 +1,20 @@
-# kabelwerk_example_mobile
+# Kabelwerk SDK Demo
 
 A simple Flutter app showcasing the Kabelwerk SDK for Dart.
 
-## Getting Started
+```sh
+# clone the project
+git clone https://github.com/kabelwerk/sdk-dart
 
-This project is a starting point for a Flutter application.
+# enter the project dir
+cd sdk-dart
 
-A few resources to get you started if this is your first Flutter project:
+# install the dependencies
+dart pub get
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+# enter the mobile demo dir
+cd example/mobile
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+# run the mobile demo
+flutter run
+```

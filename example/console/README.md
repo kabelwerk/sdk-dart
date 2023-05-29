@@ -12,7 +12,7 @@ cd sdk-dart
 # install the dependencies
 dart pub get
 
-# enter the demo dir
+# enter the console demo dir
 cd example/console
 
 # run the console demo

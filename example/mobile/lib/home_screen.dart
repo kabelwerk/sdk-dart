@@ -22,7 +22,7 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              "Welcome to Kabelwerk's React Native demo app!\n",
+              "Welcome to Kabelwerk's Flutter demo app!\n",
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             Text(
