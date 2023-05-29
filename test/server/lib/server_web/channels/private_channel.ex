@@ -8,6 +8,9 @@ defmodule ServerWeb.PrivateChannel do
       %{"ensure_rooms" => ["error"]} ->
         {:error, %{reason: "Could not ensure the requested rooms."}}
 
+      %{"ensure_rooms" => ["one", "two", "three"]} ->
+        {:ok, Factory.private_join(room_ids: [1, 2, 3]), socket}
+
       _ ->
         {:ok, Factory.private_join(), socket}
     end

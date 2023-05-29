@@ -385,16 +385,25 @@ void main() {
       room.connect();
     });
 
-    test('init and connect a room, without an id', () async {
+    test('open room 0 when no rooms → state error', () async {
+      // the test server's private channel by default returns room_ids: [] in
+      // the join output
       kabelwerk = await setUpKabelwerk();
+
+      expect(() => kabelwerk.openRoom(), throwsStateError);
+    });
+
+    test('open room 0 when rooms → open first room', () async {
+      // the test server's private channel returns room_ids: [1, 2, 3] in the
+      // join output if the ensure_rooms param is ["one", "two", "three"]
+      kabelwerk = await setUpKabelwerk(ensureRoomsOn: ["one", "two", "three"]);
 
       final room = kabelwerk.openRoom();
 
       room.on(
           'ready',
           expectAsync1((RoomReadyEvent event) {
-            // room id 0 opens an arbitrary room on the real backend
-            expect(event.messages.length, equals(0));
+            expect(event.messages.length, equals(1));
           }, count: 1));
 
       room.connect();

@@ -32,12 +32,16 @@ Future<Connector> setUpConnector(
   return completer.future;
 }
 
-Future<Kabelwerk> setUpKabelwerk() {
+Future<Kabelwerk> setUpKabelwerk({List<String>? ensureRoomsOn}) {
   final Completer<Kabelwerk> completer = Completer();
   final kabelwerk = Kabelwerk();
 
   kabelwerk.config.url = serverUrl;
   kabelwerk.config.token = 'valid-token';
+
+  if (ensureRoomsOn != null) {
+    kabelwerk.config.ensureRoomsOn = ensureRoomsOn;
+  }
 
   kabelwerk.once('ready', (KabelwerkReadyEvent event) {
     completer.complete(kabelwerk);

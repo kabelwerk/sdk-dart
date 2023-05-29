@@ -1,6 +1,11 @@
 # Changelog
 
 
+## 0.2.2 (TBA)
+
+- Fixed [`Kabelwerk.openRoom`](https://pub.dev/documentation/kabelwerk/latest/kabelwerk/Kabelwerk/openRoom.html) to correctly handle `roomId = 0`.
+
+
 ## 0.2.1 (2023-03-08)
 
 - Implemented file uploads.

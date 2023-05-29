@@ -66,6 +66,7 @@ class Kabelwerk {
   bool _ready = false;
 
   late User _user;
+  late List<int> _roomIdsAtJoin;
 
   //
   // constructors
@@ -131,6 +132,7 @@ class Kabelwerk {
       final privateJoin = PrivateJoin.fromPayload(payload['response']);
 
       _user = privateJoin.user;
+      _roomIdsAtJoin = privateJoin.roomIds;
 
       if (_ready == false) {
         // initial join
@@ -254,6 +256,14 @@ class Kabelwerk {
   /// useful when you have a single hub.
   Room openRoom([int roomId = 0]) {
     _ensureReady();
+
+    if (roomId == 0) {
+      if (_roomIdsAtJoin.isNotEmpty) {
+        roomId = _roomIdsAtJoin[0];
+      } else {
+        throw StateError('The user does not have any rooms yet.');
+      }
+    }
 
     return Room(_connector, roomId);
   }
