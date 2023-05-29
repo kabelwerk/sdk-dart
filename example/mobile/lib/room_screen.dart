@@ -96,9 +96,33 @@ flutter_chat_types.User _convertUser(User user) {
 
 // Convert a Kabelwerk message into a Flutter Chat message.
 flutter_chat_types.Message _convertMessage(Message message) {
-  return flutter_chat_types.TextMessage(
-    author: _convertUser(message.user),
-    id: message.id.toString(),
-    text: message.text,
-  );
+  if (message.type == MessageType.attachment) {
+    return flutter_chat_types.FileMessage(
+      author: _convertUser(message.user),
+      createdAt: message.insertedAt.millisecondsSinceEpoch,
+      id: message.id.toString(),
+      name: message.upload!.name,
+      size: 0,
+      updatedAt: message.updatedAt.millisecondsSinceEpoch,
+      uri: message.upload!.url,
+    );
+  } else if (message.type == MessageType.image) {
+    return flutter_chat_types.ImageMessage(
+      author: _convertUser(message.user),
+      createdAt: message.insertedAt.millisecondsSinceEpoch,
+      id: message.id.toString(),
+      name: message.upload!.name,
+      size: 0,
+      updatedAt: message.updatedAt.millisecondsSinceEpoch,
+      uri: message.upload!.previewUrl,
+    );
+  } else {
+    return flutter_chat_types.TextMessage(
+      author: _convertUser(message.user),
+      createdAt: message.insertedAt.millisecondsSinceEpoch,
+      id: message.id.toString(),
+      text: message.text,
+      updatedAt: message.updatedAt.millisecondsSinceEpoch,
+    );
+  }
 }
