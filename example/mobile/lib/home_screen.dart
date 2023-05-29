@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import './auth_context.dart';
+import './kabelwerk_context.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final kabelwerkContext = Provider.of<KabelwerkContext>(context);
+    final userName =
+        kabelwerkContext.ready ? kabelwerkContext.user.name : '...';
+
     return Scaffold(
       appBar: AppBar(title: const Text('Kabelwerk Demo')),
       body: Container(
@@ -21,7 +26,7 @@ class HomeScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             Text(
-              "You are connected as {name}. "
+              "You are connected as $userName. "
               "This user has been automatically generated for you "
               "and will be persisted on the device for a few days "
               "— unless you reset it before that.\n",
@@ -39,13 +44,6 @@ class HomeScreen extends StatelessWidget {
                   Navigator.pushNamed(context, '/room');
                 },
                 child: const Text('Open a chat room'),
-              ),
-            ),
-            const Spacer(),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {},
-                child: const Text('Open inbox'),
               ),
             ),
             const Spacer(),

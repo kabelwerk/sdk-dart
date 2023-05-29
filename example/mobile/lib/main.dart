@@ -11,7 +11,9 @@ import './room_screen.dart';
 void main() {
   runApp(MultiProvider(
     providers: [
-      ChangeNotifierProvider(create: (context) => AuthContext()..load()),
+      ChangeNotifierProvider(
+        create: (context) => AuthContext()..load(),
+      ),
       ChangeNotifierProxyProvider<AuthContext, KabelwerkContext>(
         create: (context) => KabelwerkContext(),
         update: (context, authContext, kabelwerkContext) =>

@@ -9,8 +9,11 @@ class KabelwerkContext extends ChangeNotifier {
   // public variables
   //
 
-  /// The [Kabelwerk] instance.
+  /// The current Kabelwerk instance.
   Kabelwerk kabelwerk = Kabelwerk();
+
+  /// Whether the current Kabelwerk instance's ready event has been triggered.
+  bool ready = false;
 
   //
   // getters
@@ -42,6 +45,7 @@ class KabelwerkContext extends ChangeNotifier {
     });
 
     kabelwerk.on('ready', (KabelwerkReadyEvent event) {
+      ready = true;
       notifyListeners();
     });
 
@@ -55,6 +59,7 @@ class KabelwerkContext extends ChangeNotifier {
   /// Tear down the Kabelwerk connection.
   void _disconnect() {
     kabelwerk.disconnect();
+    ready = false;
   }
 
   //
