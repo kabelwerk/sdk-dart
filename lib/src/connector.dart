@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert' show json;
 
 import 'package:cross_file/cross_file.dart' show XFile;
@@ -60,6 +61,31 @@ class Connector {
       'token': _token,
       'agent': _userAgent,
     };
+  }
+
+  // run socket.connect() in a zone
+  Future<ConnectionState> _connectSocket() {
+    final Completer<ConnectionState> completer = Completer();
+
+    runZoned(() {
+      return socket.connect();
+    }, onError: (error, stackTrace) {
+      _logger.severe(
+          'The Zone in which PhoenixSocket.connect is run caught an unhandled exception.',
+          error,
+          stackTrace);
+    }).then((PhoenixSocket? phoenixSocket) {
+      completer.complete(state);
+    }).catchError((error, stackTrace) {
+      _logger.severe(
+          'The Future returned by PhoenixSocket.connect failed to resolve.',
+          error,
+          stackTrace);
+
+      completer.complete(state);
+    });
+
+    return completer.future;
   }
 
   Future<StreamedResponse> _sendApiRequest(
@@ -146,7 +172,7 @@ class Connector {
   }
 
   /// Sets the initial auth token and calls socket.connect().
-  Future<PhoenixSocket?> connect() {
+  Future<ConnectionState> connect() {
     if (_connectHasBeenCalled != false) {
       throw StateError(
           "This Connector instance's .connect() method has already been called once.");
@@ -160,7 +186,7 @@ class Connector {
     if (_token != '') {
       state = ConnectionState.connecting;
 
-      return socket.connect();
+      return _connectSocket();
     }
 
     // if the connector is not configured with a token — call refreshToken
@@ -173,14 +199,14 @@ class Connector {
 
         _token = newToken;
 
-        return socket.connect();
+        return _connectSocket();
       }).catchError((error) {
         _logger.severe('Failed to obtain an auth token.', error);
 
         state = ConnectionState.inactive;
         _dispatcher.send('error', ErrorEvent());
 
-        return null;
+        return Future.value(state);
       });
     }
 

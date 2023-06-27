@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:phoenix_socket/phoenix_socket.dart'
-    show PhoenixChannel, PhoenixSocket, PushResponse;
+    show PhoenixChannel, PushResponse;
 import 'package:phoenix_socket/phoenix_socket.dart' as phoenix show Message;
 
 import './config.dart';
@@ -168,7 +168,7 @@ class Kabelwerk {
   /// Returns a [Future] which resolves when the first connection attempt is
   /// carried out. However, note that connection may not always succeed on the
   /// first attempt — for state changes, do rely on the events instead.
-  Future<PhoenixSocket?> connect() {
+  Future<ConnectionState> connect() {
     if (_connectHasBeenCalled != false) {
       throw StateError('Kabelwerk is already ${_connector.state}.');
     }
