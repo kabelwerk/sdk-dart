@@ -67,23 +67,31 @@ class Connector {
   Future<ConnectionState> _connectSocket() {
     final Completer<ConnectionState> completer = Completer();
 
-    runZoned(() {
+    final result = runZonedGuarded(() {
       return socket.connect();
-    }, onError: (error, stackTrace) {
+    }, (Object error, StackTrace stackTrace) {
       _logger.severe(
           'The Zone in which PhoenixSocket.connect is run caught an unhandled exception.',
           error,
           stackTrace);
-    }).then((PhoenixSocket? phoenixSocket) {
-      completer.complete(state);
-    }).catchError((error, stackTrace) {
-      _logger.severe(
-          'The Future returned by PhoenixSocket.connect failed to resolve.',
-          error,
-          stackTrace);
+    });
+
+    if (result == null) {
+      _logger.severe('PhoenixSocket.connect failed to return a Future.');
 
       completer.complete(state);
-    });
+    } else {
+      result.then((PhoenixSocket? phoenixSocket) {
+        completer.complete(state);
+      }).catchError((error, stackTrace) {
+        _logger.severe(
+            'The Future returned by PhoenixSocket.connect failed to resolve.',
+            error,
+            stackTrace);
+
+        completer.complete(state);
+      });
+    }
 
     return completer.future;
   }

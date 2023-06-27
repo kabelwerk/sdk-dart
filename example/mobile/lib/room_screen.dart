@@ -23,7 +23,7 @@ class _RoomScreenState extends State<RoomScreen> {
   late final Room _room;
 
   // Whether the room's ready event has been triggered.
-  bool _ready = false;
+  // bool _ready = false;
 
   // The list of downloaded messages, ordered as they appear in the room — the
   // most recent message goes last.
@@ -44,7 +44,7 @@ class _RoomScreenState extends State<RoomScreen> {
     _room.on('ready', (RoomReadyEvent event) {
       setState(() {
         _messages = event.messages;
-        _ready = true;
+        // _ready = true;
       });
     });
 
