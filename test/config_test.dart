@@ -27,21 +27,21 @@ void main() {
       config.url = 'kabelwerk.io';
       expect(config.getSocketUrl(),
           equals('wss://kabelwerk.io/socket/user/websocket'));
-      expect(config.getApiUrl(), equals('https://kabelwerk.io/api'));
+      expect(config.getApiUrl(), equals('https://kabelwerk.io/socket-api'));
 
       config.url = 'ws://kabelwerk.io';
       expect(config.getSocketUrl(),
           equals('ws://kabelwerk.io/socket/user/websocket'));
-      expect(config.getApiUrl(), equals('http://kabelwerk.io/api'));
+      expect(config.getApiUrl(), equals('http://kabelwerk.io/socket-api'));
 
       config.url = 'wss://kabelwerk.io/';
       expect(config.getSocketUrl(),
           equals('wss://kabelwerk.io/socket/user/websocket'));
-      expect(config.getApiUrl(), equals('https://kabelwerk.io/api'));
+      expect(config.getApiUrl(), equals('https://kabelwerk.io/socket-api'));
 
       config.url = 'kabelwerk.io/socket/hub';
       expect(config.getSocketUrl(), equals('wss://kabelwerk.io/socket/hub'));
-      expect(config.getApiUrl(), equals('https://kabelwerk.io/api'));
+      expect(config.getApiUrl(), equals('https://kabelwerk.io/socket-api'));
     });
   });
 }

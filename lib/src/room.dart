@@ -418,7 +418,7 @@ class Room {
     final Completer<Upload> completer = Completer();
 
     _connector
-        .callApi('POST', '/rooms/$_roomId/uploads', file: file)
+        .callApi('POST', '/uploads', file: file)
         .then((Map<String, dynamic> responsePayload) {
       final upload = Upload.fromPayload(responsePayload);
       completer.complete(upload);

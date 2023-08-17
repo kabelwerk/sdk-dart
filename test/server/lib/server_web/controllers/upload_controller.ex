@@ -5,10 +5,10 @@ defmodule ServerWeb.UploadController do
 
   action_fallback ServerWeb.FallbackController
 
-  def create(conn, %{"room_id" => room_id, "file" => %Plug.Upload{} = plug_upload}) do
-    {room_id, ""} = Integer.parse(room_id)
+  @supported_mime_types ["application/pdf", "image/jpeg", "image/png"]
 
-    if room_id > 0 do
+  def create(conn, %{"file" => %Plug.Upload{} = plug_upload}) do
+    if Enum.member?(@supported_mime_types, plug_upload.content_type) do
       upload = Factory.upload(mime_type: plug_upload.content_type, name: plug_upload.filename)
 
       conn

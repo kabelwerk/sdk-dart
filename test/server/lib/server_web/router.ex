@@ -7,12 +7,12 @@ defmodule ServerWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/api", ServerWeb do
+  scope "/socket-api", ServerWeb do
     pipe_through [:api, :authenticate]
 
     get "/cables/:id", CableController, :get
     post "/cables", CableController, :post
 
-    post "/rooms/:room_id/uploads", UploadController, :create
+    post "/uploads", UploadController, :create
   end
 end

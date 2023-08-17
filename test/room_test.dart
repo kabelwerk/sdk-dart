@@ -321,9 +321,11 @@ void main() {
     });
 
     test('400 → future rejected', () async {
+      room = await setUpRoom(connector);
+
       // the test server's uploads endpoint will reject the request when the
-      // room id is not positive
-      room = await setUpRoom(connector, roomId: 0);
+      // MIME type is not supported
+      final file = XFile.fromData(fileData, mimeType: 'invalid');
 
       final future = room.postUpload(file);
 
@@ -333,7 +335,7 @@ void main() {
     });
 
     test('201 → future resolves', () async {
-      room = await setUpRoom(connector, roomId: 1);
+      room = await setUpRoom(connector);
 
       final future = room.postUpload(file);
 

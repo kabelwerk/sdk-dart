@@ -103,7 +103,7 @@ class Config {
     final scheme =
         match.namedGroup('scheme') == 'ws://' ? 'http://' : 'https://';
     final host = match.namedGroup('host')!;
-    final path = '/api';
+    final path = '/socket-api';
 
     return scheme + host + path;
   }
